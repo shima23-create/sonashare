@@ -1,0 +1,107 @@
+{% extends "bichiku/base.html" %}
+ 
+{% block title %}ダッシュボード | 備蓄品マッチング{% endblock %}
+ 
+{# サイドバーで「ダッシュボード」を強調表示 #}
+{% block nav_dashboard %}active{% endblock %}
+ 
+{% block content %}
+ 
+  <div class="page-head">
+    <div>
+      <h1>ダッシュボード</h1>
+      <p>備蓄品の管理状況を確認できます</p>
+    </div>
+  </div>
+ 
+  <!-- 集計カード(数値は後でviewから渡す) -->
+  <section class="stat-grid">
+    <div class="card stat-card">
+      <div class="stat-icon tone-green"><svg class="icon"><use href="#i-package"/></svg></div>
+      <div class="stat-number">8</div>
+      <div class="stat-label">登録済み備蓄品</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon tone-orange"><svg class="icon"><use href="#i-alert"/></svg></div>
+      <div class="stat-number">3</div>
+      <div class="stat-label">消費期限が近い備蓄品</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon tone-green"><svg class="icon"><use href="#i-heart"/></svg></div>
+      <div class="stat-number">4</div>
+      <div class="stat-label">提供可能な備蓄品</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon tone-blue"><svg class="icon"><use href="#i-calendar-clock"/></svg></div>
+      <div class="stat-number">2</div>
+      <div class="stat-label">予約中の備蓄品</div>
+    </div>
+  </section>
+ 
+  <section class="panel-grid">
+ 
+    <!-- 消費期限が近い備蓄品 -->
+    <div class="card panel">
+      <div class="panel-head">
+        <h2><svg class="icon warn"><use href="#i-alert"/></svg>消費期限が近い備蓄品</h2>
+        <a href="{% url 'bichiku:item_list' %}" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <ul class="list">
+        <li>
+          <div>
+            <div class="list-title">アルファ化米(白飯)</div>
+            <div class="list-sub">期限:2026年11月10日 ・ 200食</div>
+          </div>
+          <span class="badge badge-warn">期限間近</span>
+        </li>
+        <li>
+          <div>
+            <div class="list-title">レトルト食品(カレー)</div>
+            <div class="list-sub">期限:2026年10月25日 ・ 100食</div>
+          </div>
+          <span class="badge badge-warn">期限間近</span>
+        </li>
+        <li>
+          <div>
+            <div class="list-title">栄養補助ゼリー</div>
+            <div class="list-sub">期限:2026年9月30日 ・ 120個</div>
+          </div>
+          <span class="badge badge-danger">期限切れ</span>
+        </li>
+      </ul>
+    </div>
+ 
+    <!-- 最近のメッセージ -->
+    <div class="card panel">
+      <div class="panel-head">
+        <h2><svg class="icon"><use href="#i-message"/></svg>最近のメッセージ</h2>
+        <a href="#" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <ul class="list">
+        <li>
+          <div>
+            <div class="list-title">さくら子ども食堂</div>
+            <div class="list-sub">来週の火曜日に受け取りを希望しています。</div>
+          </div>
+          <span class="message-time">14:32</span>
+        </li>
+        <li>
+          <div>
+            <div class="list-title">みらいフードバンク</div>
+            <div class="list-sub">ありがとうございます。確認のうえ連絡いたします。</div>
+          </div>
+          <span class="message-time">昨日</span>
+        </li>
+        <li>
+          <div>
+            <div class="list-title">地域支援ネットワーク</div>
+            <div class="list-sub">お世話になっております。受け取り完了のご報告です。</div>
+          </div>
+          <span class="message-time">3日前</span>
+        </li>
+      </ul>
+    </div>
+ 
+  </section>
+ 
+{% endblock %}
