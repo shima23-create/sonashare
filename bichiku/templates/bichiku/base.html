@@ -1,0 +1,79 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}備蓄品マッチング{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'bichiku/css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+ 
+  {% include "bichiku/_icons.html" %}
+ 
+  <div class="app">
+ 
+    <!-- ===== サイドバー(全ページ共通) ===== -->
+    <aside class="sidebar">
+      <a href="{% url 'bichiku:dashboard' %}" class="sidebar-brand">
+        <span class="logo-mark"><svg class="icon"><use href="#i-package"/></svg></span>
+        備蓄品マッチング
+      </a>
+      <ul class="nav">
+        <li>
+          <a href="{% url 'bichiku:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">
+            <svg class="icon"><use href="#i-grid"/></svg>ダッシュボード
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'bichiku:item_list' %}" class="{% block nav_items %}{% endblock %}">
+            <svg class="icon"><use href="#i-package"/></svg>備蓄品管理
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% block nav_reservations %}{% endblock %}">
+            <svg class="icon"><use href="#i-calendar-check"/></svg>予約一覧
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% block nav_messages %}{% endblock %}">
+            <svg class="icon"><use href="#i-message"/></svg>メッセージ<span class="badge-count">1</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="{% block nav_mypage %}{% endblock %}">
+            <svg class="icon"><use href="#i-user-circle"/></svg>マイページ
+          </a>
+        </li>
+        <li class="nav-divider"></li>
+        <li>
+          <a href="#">
+            <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
+          </a>
+        </li>
+      </ul>
+    </aside>
+ 
+    <div class="main">
+ 
+      <!-- ===== ヘッダー(全ページ共通) ===== -->
+      <header class="topbar">
+        <span class="topbar-title">企業メニュー</span>
+        <div class="user-menu">
+          <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+          {{ company_name|default:"A食品株式会社" }}
+          <svg class="icon"><use href="#i-chevron-down"/></svg>
+        </div>
+      </header>
+ 
+      <!-- ===== ページごとの中身 ===== -->
+      <main class="content">
+        {% block content %}{% endblock %}
+      </main>
+ 
+    </div>
+  </div>
+ 
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

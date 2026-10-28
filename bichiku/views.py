@@ -1,6 +1,7 @@
 from django.shortcuts import render
-from .models import Item
+
+def dashboard(request):
+    return render(request, "bichiku/dashboard.html")
 
 def item_list(request):
-    items = Item.objects.all()
-    return render(request, 'bichiku/item_list.html', {'items': items})
+    return render(request, "bichiku/items.html")
