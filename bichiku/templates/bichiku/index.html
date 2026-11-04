@@ -1,0 +1,36 @@
+{% extends "bichiku/auth_base.html" %}
+
+{% block title %}備蓄品マッチング{% endblock %}
+
+{% block content %}
+
+  <section class="hero">
+    <div class="logo-mark">
+      <svg class="icon"><use href="#i-package"/></svg>
+    </div>
+    <h1>備蓄品マッチング</h1>
+    <p>
+      企業の災害用備蓄品と、子ども食堂・フードバンクなどの活動団体をつなぐシステムです。
+      期限が近い備蓄品を必要な団体へ届け、食品ロス削減と地域活動の支援を目指します。
+    </p>
+
+    <div class="hero-actions">
+      <a href="{% url 'bichiku:login' %}" class="btn btn-primary">ログイン</a>
+      <a href="#" class="btn">新規登録</a>
+    </div>
+  </section>
+
+  <section class="role-cards">
+    <div class="role-card">
+      <svg class="icon"><use href="#i-building"/></svg>
+      <h3>企業の皆様</h3>
+      <p>備蓄品の管理と提供</p>
+    </div>
+    <div class="role-card">
+      <svg class="icon"><use href="#i-heart"/></svg>
+      <h3>活動団体の皆様</h3>
+      <p>備蓄品の検索と予約</p>
+    </div>
+  </section>
+
+{% endblock %}
