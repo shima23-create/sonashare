@@ -1,0 +1,21 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}備蓄品マッチング{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'bichiku/css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  {% include "bichiku/_icons.html" %}
+
+
+  <main class="page-center">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

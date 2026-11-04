@@ -1,0 +1,64 @@
+{% extends "bichiku/auth_base.html" %}
+
+{% block title %}ログイン | 備蓄品マッチング{% endblock %}
+
+{% block content %}
+
+  <header class="auth-header">
+    <div class="logo-mark">
+      <svg class="icon"><use href="#i-package"/></svg>
+    </div>
+    <h1>ログイン</h1>
+  </header>
+
+  <form class="auth-card" action="{% url 'bichiku:login' %}" method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <span class="form-label">利用者種別</span>
+      <div class="toggle-group">
+        <label>
+          <input type="radio" name="user_type" value="company" checked>
+          <span class="toggle">
+            <svg class="icon"><use href="#i-building"/></svg>企業
+          </span>
+        </label>
+        <label>
+          <input type="radio" name="user_type" value="user">
+          <span class="toggle">
+            <svg class="icon"><use href="#i-users"/></svg>利用者
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="org_name">団体・企業名(任意)</label>
+      <div class="input-wrap">
+        <svg class="icon"><use href="#i-user"/></svg>
+        <input class="input" type="text" id="org_name" name="org_name" placeholder="例:サンプル企業">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">メールアドレス</label>
+      <div class="input-wrap">
+        <svg class="icon"><use href="#i-mail"/></svg>
+        <input class="input" type="email" id="email" name="email" placeholder="example@email.com" required>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">パスワード</label>
+      <div class="input-wrap">
+        <svg class="icon"><use href="#i-lock"/></svg>
+        <input class="input" type="password" id="password" name="password" required>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">ログイン</button>
+
+    <p class="auth-footer">アカウントをお持ちでない方は <a href="#">新規登録</a></p>
+  </form>
+
+{% endblock %}
