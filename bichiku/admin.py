@@ -18,7 +18,6 @@ from .models import (
 User = get_user_model()
 
 
-# ---- ユーザー画面に「所属組織」を一緒に入力できるようにする ----
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False

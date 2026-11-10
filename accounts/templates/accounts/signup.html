@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新規登録</title>
+  <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+</head>
+<body class="auth-form-page">
+  <div class="auth-shell">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2.5 18.5 6v12L12 21.5 5.5 18V6L12 2.5Z"/>
+        <path d="M12 2.5v7.5M5.5 6l6.5 4 6.5-4M5.5 18l6.5-4 6.5 4"/>
+      </svg>
+    </div>
+    <h1 class="page-title">新規登録</h1>
+
+    <div class="auth-card">
+      <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="non-field-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="field">
+          <label for="id_company_name">団体・企業名</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24"><path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 8v-1a4 4 0 0 0-3-3.87M20 3.13a4 4 0 0 1 0 7.75"/></svg>
+            {{ form.company_name }}
+          </div>
+          {% if form.company_name.errors %}<ul class="form-errors">{% for error in form.company_name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="id_email">メールアドレス</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m5 7 7 5 7-5"/></svg>
+            {{ form.email }}
+          </div>
+          {% if form.email.errors %}<ul class="form-errors">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="id_password">パスワード</label>
+          <div class="input-shell">
+            <svg viewBox="0 0 24 24"><path d="M7 10V7.5A5 5 0 0 1 17 7.5V10"/><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M12 14v2"/></svg>
+            {{ form.password }}
+          </div>
+          {% if form.password.errors %}<ul class="form-errors">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="signup-user-type">
+          <label class="field-label">利用者種別</label>
+          <div class="segment">
+            {% for choice in form.user_type %}
+              {{ choice.tag }}
+              <label for="{{ choice.id_for_label }}">
+                {% if choice.choice_value == 'company' %}
+                  <svg viewBox="0 0 24 24"><path d="M4 21V6.5A1.5 1.5 0 0 1 5.5 5H11V21M19 21V9.5A1.5 1.5 0 0 0 17.5 8H11v13M11 5h6.5A1.5 1.5 0 0 1 19 6.5V8M7 10h2m-2 4h2"/></svg>
+                {% else %}
+                  <svg viewBox="0 0 24 24"><path d="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1m9-13a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm9 13v-1a4 4 0 0 0-3-3.87m-3-8.13a4 4 0 1 1 0 8"/></svg>
+                {% endif %}
+                {{ choice.choice_label }}
+              </label>
+            {% endfor %}
+          </div>
+          <p class="signup-user-type-help">利用者：子ども食堂・フードバンクなどの活動団体</p>
+        </div>
+
+        <div class="button-wrap">
+          <button type="submit" class="submit-btn">登録する</button>
+        </div>
+
+        <div class="help-link">
+          既に登録済みの方は <a href="{% url 'accounts:login' %}">ログイン</a>
+        </div>
+      </form>
+    </div>
+
+    <a href="{% url 'bichiku:index' %}" class="back-link"><span>← トップに戻る</span></a>
+  </div>
+</body>
+</html>
