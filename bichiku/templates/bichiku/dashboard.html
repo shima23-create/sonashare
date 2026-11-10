@@ -16,26 +16,26 @@
  
   <!-- 集計カード(数値は後でviewから渡す) -->
   <section class="stat-grid">
-    <div class="card stat-card">
+    <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-green"><svg class="icon"><use href="#i-package"/></svg></div>
       <div class="stat-number">8</div>
       <div class="stat-label">登録済み備蓄品</div>
-    </div>
-    <div class="card stat-card">
+    </a>
+    <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-orange"><svg class="icon"><use href="#i-alert"/></svg></div>
       <div class="stat-number">3</div>
       <div class="stat-label">消費期限が近い備蓄品</div>
-    </div>
-    <div class="card stat-card">
+    </a>
+    <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-green"><svg class="icon"><use href="#i-heart"/></svg></div>
       <div class="stat-number">4</div>
       <div class="stat-label">提供可能な備蓄品</div>
-    </div>
-    <div class="card stat-card">
+    </a>
+    <a href="{% url 'bichiku:reservation_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-blue"><svg class="icon"><use href="#i-calendar-clock"/></svg></div>
       <div class="stat-number">2</div>
       <div class="stat-label">予約中の備蓄品</div>
-    </div>
+    </a>
   </section>
  
   <section class="panel-grid">
@@ -75,30 +75,20 @@
     <div class="card panel">
       <div class="panel-head">
         <h2><svg class="icon"><use href="#i-message"/></svg>最近のメッセージ</h2>
-        <a href="#" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+        <a href="{% url 'bichiku:messages' %}" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
       </div>
       <ul class="list">
-        <li>
-          <div>
-            <div class="list-title">さくら子ども食堂</div>
-            <div class="list-sub">来週の火曜日に受け取りを希望しています。</div>
-          </div>
-          <span class="message-time">14:32</span>
-        </li>
-        <li>
-          <div>
-            <div class="list-title">みらいフードバンク</div>
-            <div class="list-sub">ありがとうございます。確認のうえ連絡いたします。</div>
-          </div>
-          <span class="message-time">昨日</span>
-        </li>
-        <li>
-          <div>
-            <div class="list-title">地域支援ネットワーク</div>
-            <div class="list-sub">お世話になっております。受け取り完了のご報告です。</div>
-          </div>
-          <span class="message-time">3日前</span>
-        </li>
+        {% for row in recent_conversations %}
+          <li>
+            <div>
+              <a class="list-title" href="{% url 'bichiku:conversation_detail' row.conversation.pk %}">{{ row.other_organization.name }}</a>
+              <div class="list-sub">{% if row.last_message %}{{ row.last_message.content|truncatechars:52 }}{% else %}メッセージはありません{% endif %}</div>
+            </div>
+            {% if row.last_message %}<time class="message-time">{{ row.last_message.created_at|date:"m/d H:i" }}</time>{% endif %}
+          </li>
+        {% empty %}
+          <li><div class="list-sub">メッセージはありません。</div></li>
+        {% endfor %}
       </ul>
     </div>
  

@@ -181,6 +181,14 @@ class StockLot(TimeStampedModel):
     def expiry_badge_class(self):
         return EXPIRY_STATUS_INFO[self.expiry_status][1]
 
+    @property
+    def availability_badge_class(self):
+        return {
+            self.Availability.AVAILABLE: "badge-available",
+            self.Availability.RESERVED: "badge-reserved",
+            self.Availability.PROVIDED: "badge-provided",
+        }.get(self.availability, "badge-neutral")
+
     # ---- 数量の計算 ----
     @property
     def reserved_quantity(self):

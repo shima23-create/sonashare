@@ -1,61 +1,70 @@
 {% extends "bichiku/base.html" %}
- 
+
 {% block title %}備蓄品管理 | 備蓄品マッチング{% endblock %}
- 
-{# サイドバーで「備蓄品管理」を強調表示 #}
 {% block nav_items %}active{% endblock %}
- 
+
 {% block content %}
- 
   <div class="page-head">
     <div>
       <h1>備蓄品管理</h1>
       <p>備蓄品の登録・編集・削除ができます</p>
     </div>
-    <a href="#" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg>備蓄品を登録</a>
+    <a href="{% url 'bichiku:item_list' %}?register=1" class="btn btn-primary">
+      <svg class="icon"><use href="#i-plus"/></svg>備蓄品を登録
+    </a>
   </div>
- 
-  <!-- 検索・絞り込み -->
+
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == "error" %}<div class="inventory-message">{{ message }}</div>{% endif %}
+    {% endfor %}
+  {% endif %}
+
   <form class="card filter-card" method="get">
     <div>
       <label class="form-label" for="q">キーワード検索</label>
       <div class="input-wrap">
         <svg class="icon"><use href="#i-search"/></svg>
-        <input class="input" type="text" id="q" name="q" placeholder="備蓄品名で検索">
+        <input class="input" type="search" id="q" name="q" value="{{ request.GET.q }}" placeholder="品名・保管場所・備考で検索">
       </div>
     </div>
     <div>
       <label class="form-label" for="category">カテゴリ</label>
       <select class="select" id="category" name="category">
         <option value="">すべて</option>
-        <option>主食</option>
-        <option>飲料</option>
-        <option>缶詰</option>
-        <option>レトルト食品</option>
-        <option>その他</option>
+        {% for value, label in form.fields.category.choices %}
+          <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
       </select>
     </div>
     <div>
       <label class="form-label" for="expiry">消費期限</label>
       <select class="select" id="expiry" name="expiry">
         <option value="">すべて</option>
-        <option>期限間近</option>
-        <option>期限切れ</option>
-        <option>正常</option>
+        <option value="warning" {% if request.GET.expiry == "warning" %}selected{% endif %}>期限間近</option>
+        <option value="expired" {% if request.GET.expiry == "expired" %}selected{% endif %}>期限切れ</option>
+        <option value="ok" {% if request.GET.expiry == "ok" %}selected{% endif %}>正常</option>
       </select>
     </div>
     <div>
       <label class="form-label" for="status">提供状況</label>
       <select class="select" id="status" name="status">
         <option value="">すべて</option>
-        <option>提供可能</option>
-        <option>予約中</option>
-        <option>提供済み</option>
+        {% for value, label in form.fields.availability.choices %}
+          <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
       </select>
     </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary">
+        <svg class="icon"><use href="#i-search"/></svg>検索
+      </button>
+      {% if request.GET.q or request.GET.category or request.GET.expiry or request.GET.status %}
+        <a href="{% url 'bichiku:item_list' %}" class="filter-clear">条件をクリア</a>
+      {% endif %}
+    </div>
   </form>
- 
-  {# 備蓄品一覧(あとでviewから渡したデータをforで繰り返す形に置き換える) #}
+
   <div class="card table-card">
     <table class="table">
       <thead>
@@ -71,88 +80,177 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td class="name">保存水(500ml)</td>
-          <td>飲料</td>
-          <td>500本</td>
-          <td>2026年11月30日</td>
-          <td>第1倉庫 A棚</td>
-          <td><span class="badge badge-ok">正常</span></td>
-          <td><span class="badge badge-ok">提供可能</span></td>
-          <td class="col-actions">
-            <span class="actions">
-              <a href="#" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></a>
-              <a href="#" title="編集"><svg class="icon"><use href="#i-pencil"/></svg></a>
-              <a href="#" title="削除" class="delete"><svg class="icon"><use href="#i-trash"/></svg></a>
-            </span>
-          </td>
-        </tr>
-        <tr>
-          <td class="name">アルファ化米(白飯)</td>
-          <td>主食</td>
-          <td>200食</td>
-          <td>2026年11月10日</td>
-          <td>第1倉庫 B棚</td>
-          <td><span class="badge badge-warn">期限間近</span></td>
-          <td><span class="badge badge-ok">提供可能</span></td>
-          <td class="col-actions">
-            <span class="actions">
-              <a href="#" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></a>
-              <a href="#" title="編集"><svg class="icon"><use href="#i-pencil"/></svg></a>
-              <a href="#" title="削除" class="delete"><svg class="icon"><use href="#i-trash"/></svg></a>
-            </span>
-          </td>
-        </tr>
-        <tr>
-          <td class="name">缶詰(サバ味噌煮)</td>
-          <td>缶詰</td>
-          <td>150個</td>
-          <td>2027年3月15日</td>
-          <td>第2倉庫 C棚</td>
-          <td><span class="badge badge-ok">正常</span></td>
-          <td><span class="badge badge-ok">提供可能</span></td>
-          <td class="col-actions">
-            <span class="actions">
-              <a href="#" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></a>
-              <a href="#" title="編集"><svg class="icon"><use href="#i-pencil"/></svg></a>
-              <a href="#" title="削除" class="delete"><svg class="icon"><use href="#i-trash"/></svg></a>
-            </span>
-          </td>
-        </tr>
-        <tr>
-          <td class="name">レトルト食品(カレー)</td>
-          <td>レトルト食品</td>
-          <td>100食</td>
-          <td>2026年10月25日</td>
-          <td>第2倉庫 D棚</td>
-          <td><span class="badge badge-warn">期限間近</span></td>
-          <td><span class="badge badge-ok">提供可能</span></td>
-          <td class="col-actions">
-            <span class="actions">
-              <a href="#" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></a>
-              <a href="#" title="編集"><svg class="icon"><use href="#i-pencil"/></svg></a>
-              <a href="#" title="削除" class="delete"><svg class="icon"><use href="#i-trash"/></svg></a>
-            </span>
-          </td>
-        </tr>
-        <tr>
-          <td class="name">栄養補助ゼリー</td>
-          <td>その他</td>
-          <td>120個</td>
-          <td>2026年9月30日</td>
-          <td>第1倉庫 A棚</td>
-          <td><span class="badge badge-danger">期限切れ</span></td>
-          <td><span class="badge badge-ok">提供可能</span></td>
-          <td class="col-actions">
-            <span class="actions">
-              <a href="#" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></a>
-              <a href="#" title="編集"><svg class="icon"><use href="#i-pencil"/></svg></a>
-              <a href="#" title="削除" class="delete"><svg class="icon"><use href="#i-trash"/></svg></a>
-            </span>
-          </td>
-        </tr>
+        {% for lot in inventory_lots %}
+          <tr>
+            <td class="name">{{ lot.stock_item.name }}</td>
+            <td>{{ lot.stock_item.get_category_display }}</td>
+            <td>{{ lot.quantity }}{{ lot.stock_item.unit }}</td>
+            <td>{{ lot.expiration_date|date:"Y年n月j日" }}</td>
+            <td>{{ lot.storage_place }}</td>
+            <td><span class="badge {{ lot.expiry_badge_class }}">{{ lot.expiry_label }}</span></td>
+            <td><span class="badge {{ lot.availability_badge_class }}">{{ lot.get_availability_display }}</span></td>
+            <td class="col-actions">
+              <span class="actions inventory-actions">
+                  <button
+                    type="button"
+                    class="inventory-action-delete"
+                    title="削除"
+                    aria-label="{{ lot.stock_item.name }}を削除"
+                    data-delete-url="{% url 'bichiku:item_delete' lot.pk %}"
+                    data-item-name="{{ lot.stock_item.name }}"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="icon"><use href="#i-trash"/></svg>
+                  </button>
+                <a href="{% url 'bichiku:item_edit' lot.pk %}" title="編集" aria-label="{{ lot.stock_item.name }}を編集"><svg class="icon"><use href="#i-pencil"/></svg></a>
+                <a href="{% url 'bichiku:item_detail' lot.pk %}" title="詳細" aria-label="{{ lot.stock_item.name }}の詳細"><svg class="icon"><use href="#i-eye"/></svg></a>
+              </span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="inventory-empty">登録された備蓄品はありません。</td></tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
- 
+
+  <dialog class="inventory-delete-dialog" id="inventoryDeleteDialog" aria-labelledby="inventoryDeleteTitle">
+    <header class="inventory-delete-header">
+      <h2 id="inventoryDeleteTitle">備蓄品を削除</h2>
+      <button type="button" class="inventory-delete-close" aria-label="閉じる" data-delete-cancel>×</button>
+    </header>
+    <div class="inventory-delete-content">
+      <p>「<strong id="inventoryDeleteItemName"></strong>」を削除しますか？この操作は取り消せません。</p>
+    </div>
+    <form method="post" class="inventory-delete-actions" id="inventoryDeleteForm">
+      {% csrf_token %}
+      <button type="button" class="btn" data-delete-cancel>キャンセル</button>
+      <button type="submit" class="btn inventory-delete-confirm">削除する</button>
+    </form>
+  </dialog>
+
+  {% if show_register_form %}
+    <div class="inventory-register-overlay">
+      <a class="inventory-register-backdrop" href="{% url 'bichiku:item_list' %}" aria-label="閉じる"></a>
+      <section class="inventory-register-dialog" role="dialog" aria-modal="true" aria-labelledby="inventoryRegisterTitle">
+        <header class="inventory-register-header">
+          <h2 id="inventoryRegisterTitle">{% if is_edit %}備蓄品を編集{% else %}備蓄品を登録{% endif %}</h2>
+          <a href="{% url 'bichiku:item_list' %}" class="inventory-register-close" aria-label="閉じる">×</a>
+        </header>
+
+        <form method="post" class="inventory-register-form">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="inventory-form-errors">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="inventory-form-grid">
+            <div class="inventory-form-field inventory-form-name">
+              <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+              {{ form.name }}
+              {{ form.name.errors }}
+            </div>
+            <div class="inventory-form-field">
+              <label class="form-label" for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+              {{ form.category }}
+              {{ form.category.errors }}
+            </div>
+            <div class="inventory-form-field">
+              <label class="form-label" for="{{ form.quantity.id_for_label }}">{{ form.quantity.label }}</label>
+              {{ form.quantity }}
+              {{ form.quantity.errors }}
+            </div>
+            <div class="inventory-form-field">
+              <label class="form-label" for="{{ form.unit.id_for_label }}">{{ form.unit.label }}</label>
+              {{ form.unit }}
+              {{ form.unit.errors }}
+            </div>
+            <div class="inventory-form-field">
+              <label class="form-label" for="{{ form.expiration_date.id_for_label }}">{{ form.expiration_date.label }}</label>
+              {{ form.expiration_date }}
+              {{ form.expiration_date.errors }}
+            </div>
+            <div class="inventory-form-field">
+              <label class="form-label" for="{{ form.storage_place.id_for_label }}">{{ form.storage_place.label }}</label>
+              {{ form.storage_place }}
+              {{ form.storage_place.errors }}
+            </div>
+            <div class="inventory-form-field inventory-form-full">
+              <label class="form-label" for="{{ form.availability.id_for_label }}">{{ form.availability.label }}</label>
+              {{ form.availability }}
+              {{ form.availability.errors }}
+            </div>
+            <div class="inventory-form-field inventory-form-full">
+              <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+              {{ form.notes }}
+              {{ form.notes.errors }}
+            </div>
+          </div>
+
+          <footer class="inventory-register-actions">
+            <a href="{% url 'bichiku:item_list' %}" class="btn">キャンセル</a>
+            <button type="submit" class="btn btn-primary">{% if is_edit %}更新する{% else %}登録する{% endif %}</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  {% endif %}
+
+  {% if detail_lot %}
+    <div class="inventory-register-overlay">
+      <a class="inventory-register-backdrop" href="{% url 'bichiku:item_list' %}" aria-label="閉じる"></a>
+      <section class="inventory-register-dialog inventory-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="inventoryDetailTitle">
+        <header class="inventory-register-header">
+          <h2 id="inventoryDetailTitle">備蓄品の詳細</h2>
+          <a href="{% url 'bichiku:item_list' %}" class="inventory-register-close" aria-label="閉じる">×</a>
+        </header>
+        <dl class="inventory-detail-list">
+          <div><dt>備蓄品名</dt><dd>{{ detail_lot.stock_item.name }}</dd></div>
+          <div><dt>カテゴリ</dt><dd>{{ detail_lot.stock_item.get_category_display }}</dd></div>
+          <div><dt>数量</dt><dd>{{ detail_lot.quantity }} {{ detail_lot.stock_item.unit }}</dd></div>
+          <div><dt>消費期限</dt><dd>{{ detail_lot.expiration_date|date:"Y年n月j日" }}</dd></div>
+          <div><dt>保管場所</dt><dd>{{ detail_lot.storage_place }}</dd></div>
+          <div><dt>期限状態</dt><dd>{{ detail_lot.expiry_label }}</dd></div>
+          <div><dt>提供状況</dt><dd>{{ detail_lot.get_availability_display }}</dd></div>
+          <div class="inventory-detail-notes"><dt>備考</dt><dd>{{ detail_lot.stock_item.notes|default:"備考はありません。" }}</dd></div>
+        </dl>
+        <footer class="inventory-register-actions">
+          <a href="{% url 'bichiku:item_edit' detail_lot.pk %}" class="btn btn-primary">編集する</a>
+        </footer>
+      </section>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  {{ block.super }}
+  <script>
+    (() => {
+      const dialog = document.getElementById("inventoryDeleteDialog");
+      const form = document.getElementById("inventoryDeleteForm");
+      const itemName = document.getElementById("inventoryDeleteItemName");
+
+      if (!dialog || !form || !itemName) {
+        return;
+      }
+
+      document.querySelectorAll(".inventory-action-delete[data-delete-url]").forEach((button) => {
+        button.addEventListener("click", () => {
+          form.action = button.dataset.deleteUrl;
+          itemName.textContent = button.dataset.itemName;
+          dialog.showModal();
+        });
+      });
+
+      dialog.querySelectorAll("[data-delete-cancel]").forEach((button) => {
+        button.addEventListener("click", () => dialog.close());
+      });
+
+      dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) {
+          dialog.close();
+        }
+      });
+    })();
+  </script>
 {% endblock %}
