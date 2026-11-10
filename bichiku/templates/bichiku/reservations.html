@@ -1,0 +1,184 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}予約一覧 | 備蓄品マッチング{% endblock %}
+
+{% block nav_reservations %}active{% endblock %}
+
+{% block content %}
+  <div class="page-head reservation-page-head">
+    <div>
+      <h1>予約一覧</h1>
+      <p>活動団体からの予約状況を確認できます</p>
+    </div>
+  </div>
+
+  <form class="card reservation-filter" method="get">
+    <div>
+      <label class="form-label" for="reservationQuery">キーワード検索</label>
+      <div class="input-wrap">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input class="input" type="search" id="reservationQuery" name="q" value="{{ request.GET.q }}" placeholder="備蓄品名・団体名で検索">
+      </div>
+    </div>
+    <div>
+      <label class="form-label" for="reservationStatus">予約状況</label>
+      <select class="select" id="reservationStatus" name="status">
+        <option value="">すべて</option>
+        <option value="reserved" {% if request.GET.status == "reserved" %}selected{% endif %}>予約中</option>
+        <option value="scheduled" {% if request.GET.status == "scheduled" %}selected{% endif %}>受け取り予定</option>
+        <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>受け取り完了</option>
+      </select>
+    </div>
+  </form>
+
+  <nav class="reservation-tabs" aria-label="予約状況で絞り込み">
+    <a class="{% if not request.GET.status %}active{% endif %}" href="{% url 'bichiku:reservation_list' %}">すべて</a>
+    <a class="{% if request.GET.status == 'reserved' %}active{% endif %}" href="?status=reserved">予約中</a>
+    <a class="{% if request.GET.status == 'scheduled' %}active{% endif %}" href="?status=scheduled">受け取り予定</a>
+    <a class="{% if request.GET.status == 'completed' %}active{% endif %}" href="?status=completed">受け取り完了</a>
+  </nav>
+
+  <div class="card table-card reservation-table-card">
+    <table class="table reservation-table">
+      <thead>
+        <tr>
+          <th>予約番号</th>
+          <th>予約した団体名</th>
+          <th>備蓄品名</th>
+          <th>予約数量</th>
+          <th>予約日時</th>
+          <th>受け取り希望日時</th>
+          <th>予約状況</th>
+          <th class="col-actions">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="reservation-number" data-label="予約番号">cres-1</td>
+          <td data-label="予約した団体名">さくら子ども食堂</td>
+          <td class="reservation-item-name" data-label="備蓄品名">アルファ化米（白飯）</td>
+          <td data-label="予約数量">30</td>
+          <td data-label="予約日時">2026年10月18日<br>09:30</td>
+          <td data-label="受け取り希望日時">2026年10月22日<br>10:00</td>
+          <td data-label="予約状況"><span class="badge badge-warn">予約中</span></td>
+          <td class="col-actions" data-label="操作">
+            <span class="reservation-actions">
+              <input class="reservation-detail-toggle" type="checkbox" id="detail-cres-1">
+              <label class="reservation-detail-trigger" for="detail-cres-1" aria-label="予約 cres-1 の詳細" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></label>
+              <div class="reservation-detail-overlay">
+                <label class="reservation-detail-backdrop" for="detail-cres-1" aria-label="閉じる"></label>
+                <section class="reservation-detail-popover" role="dialog" aria-modal="true" aria-label="予約 cres-1 の詳細">
+                  <header class="reservation-detail-popover-header"><h2>予約詳細</h2><label class="reservation-detail-close" for="detail-cres-1" aria-label="閉じる">×</label></header>
+                  <dl>
+                    <div><dt>予約番号</dt><dd>cres-1</dd></div><div><dt>予約した団体名</dt><dd>さくら子ども食堂</dd></div>
+                    <div><dt>備蓄品名</dt><dd>アルファ化米（白飯）</dd></div><div><dt>予約数量</dt><dd>30</dd></div>
+                    <div><dt>予約日時</dt><dd>2026年10月18日 09:30</dd></div><div><dt>受け取り希望日時</dt><dd>2026年10月22日 10:00</dd></div>
+                    <div><dt>予約状況</dt><dd><span class="badge badge-warn">予約中</span></dd></div><div><dt>保管場所</dt><dd>第1倉庫 B棚</dd></div>
+                    <div class="reservation-detail-full"><dt>受け取り条件</dt><dd class="reservation-detail-note">火・木曜日のみ、9:00〜12:00</dd></div>
+                    <div class="reservation-detail-full"><dt>連絡事項</dt><dd class="reservation-detail-note">団体のワゴン車で受け取りに伺います。</dd></div>
+                  </dl>
+                  <a class="btn btn-primary reservation-message-button" href="#"><svg class="icon"><use href="#i-message"/></svg>この団体にメッセージを送る</a>
+                </section>
+              </div>
+              <a href="#" aria-label="予約 cres-1 のメッセージ" title="メッセージ"><svg class="icon"><use href="#i-message"/></svg></a>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="reservation-number" data-label="予約番号">cres-2</td>
+          <td data-label="予約した団体名">みらいフードバンク</td>
+          <td class="reservation-item-name" data-label="備蓄品名">レトルト食品（カレー）</td>
+          <td data-label="予約数量">80</td>
+          <td data-label="予約日時">2026年10月19日<br>10:00</td>
+          <td data-label="受け取り希望日時">2026年10月24日<br>15:00</td>
+          <td data-label="予約状況"><span class="badge badge-warn">予約中</span></td>
+          <td class="col-actions" data-label="操作">
+            <span class="reservation-actions">
+              <input class="reservation-detail-toggle" type="checkbox" id="detail-cres-2">
+              <label class="reservation-detail-trigger" for="detail-cres-2" aria-label="予約 cres-2 の詳細" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></label>
+              <div class="reservation-detail-overlay">
+                <label class="reservation-detail-backdrop" for="detail-cres-2" aria-label="閉じる"></label>
+                <section class="reservation-detail-popover" role="dialog" aria-modal="true" aria-label="予約 cres-2 の詳細">
+                  <header class="reservation-detail-popover-header"><h2>予約詳細</h2><label class="reservation-detail-close" for="detail-cres-2" aria-label="閉じる">×</label></header>
+                  <dl>
+                    <div><dt>予約番号</dt><dd>cres-2</dd></div><div><dt>予約した団体名</dt><dd>みらいフードバンク</dd></div>
+                    <div><dt>備蓄品名</dt><dd>レトルト食品（カレー）</dd></div><div><dt>予約数量</dt><dd>80</dd></div>
+                    <div><dt>予約日時</dt><dd>2026年10月19日 10:00</dd></div><div><dt>受け取り希望日時</dt><dd>2026年10月24日 15:00</dd></div>
+                    <div><dt>予約状況</dt><dd><span class="badge badge-warn">予約中</span></dd></div><div><dt>保管場所</dt><dd>第2倉庫 D棚</dd></div>
+                    <div class="reservation-detail-full"><dt>受け取り条件</dt><dd class="reservation-detail-note">平日、10:00〜16:00</dd></div>
+                    <div class="reservation-detail-full"><dt>連絡事項</dt><dd class="reservation-detail-note">到着前にメッセージでご連絡します。</dd></div>
+                  </dl>
+                  <a class="btn btn-primary reservation-message-button" href="#"><svg class="icon"><use href="#i-message"/></svg>この団体にメッセージを送る</a>
+                </section>
+              </div>
+              <a href="#" aria-label="予約 cres-2 のメッセージ" title="メッセージ"><svg class="icon"><use href="#i-message"/></svg></a>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="reservation-number" data-label="予約番号">cres-3</td>
+          <td data-label="予約した団体名">地域支援ネットワーク</td>
+          <td class="reservation-item-name" data-label="備蓄品名">保存水（500ml）</td>
+          <td data-label="予約数量">100</td>
+          <td data-label="予約日時">2026年10月19日<br>11:00</td>
+          <td data-label="受け取り希望日時">2026年10月25日<br>11:00</td>
+          <td data-label="予約状況"><span class="badge badge-ok">受け取り予定</span></td>
+          <td class="col-actions" data-label="操作">
+            <span class="reservation-actions">
+              <input class="reservation-detail-toggle" type="checkbox" id="detail-cres-3">
+              <label class="reservation-detail-trigger" for="detail-cres-3" aria-label="予約 cres-3 の詳細" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></label>
+              <div class="reservation-detail-overlay">
+                <label class="reservation-detail-backdrop" for="detail-cres-3" aria-label="閉じる"></label>
+                <section class="reservation-detail-popover" role="dialog" aria-modal="true" aria-label="予約 cres-3 の詳細">
+                  <header class="reservation-detail-popover-header"><h2>予約詳細</h2><label class="reservation-detail-close" for="detail-cres-3" aria-label="閉じる">×</label></header>
+                  <dl>
+                    <div><dt>予約番号</dt><dd>cres-3</dd></div><div><dt>予約した団体名</dt><dd>地域支援ネットワーク</dd></div>
+                    <div><dt>備蓄品名</dt><dd>保存水（500ml）</dd></div><div><dt>予約数量</dt><dd>100</dd></div>
+                    <div><dt>予約日時</dt><dd>2026年10月19日 11:00</dd></div><div><dt>受け取り希望日時</dt><dd>2026年10月25日 11:00</dd></div>
+                    <div><dt>予約状況</dt><dd><span class="badge badge-ok">受け取り予定</span></dd></div><div><dt>保管場所</dt><dd>第1倉庫 A棚</dd></div>
+                    <div class="reservation-detail-full"><dt>受け取り条件</dt><dd class="reservation-detail-note">土曜日、9:00〜12:00</dd></div>
+                    <div class="reservation-detail-full"><dt>連絡事項</dt><dd class="reservation-detail-note">受け取り担当者は当日ご連絡します。</dd></div>
+                  </dl>
+                  <a class="btn btn-primary reservation-message-button" href="#"><svg class="icon"><use href="#i-message"/></svg>この団体にメッセージを送る</a>
+                </section>
+              </div>
+              <a href="#" aria-label="予約 cres-3 のメッセージ" title="メッセージ"><svg class="icon"><use href="#i-message"/></svg></a>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="reservation-number" data-label="予約番号">cres-4</td>
+          <td data-label="予約した団体名">さくら子ども食堂</td>
+          <td class="reservation-item-name" data-label="備蓄品名">缶詰（サバ味噌煮）</td>
+          <td data-label="予約数量">40</td>
+          <td data-label="予約日時">2026年10月12日<br>14:30</td>
+          <td data-label="受け取り希望日時">2026年10月17日<br>13:00</td>
+          <td data-label="予約状況"><span class="badge badge-info">受け取り完了</span></td>
+          <td class="col-actions" data-label="操作">
+            <span class="reservation-actions">
+              <input class="reservation-detail-toggle" type="checkbox" id="detail-cres-4">
+              <label class="reservation-detail-trigger" for="detail-cres-4" aria-label="予約 cres-4 の詳細" title="詳細"><svg class="icon"><use href="#i-eye"/></svg></label>
+              <div class="reservation-detail-overlay">
+                <label class="reservation-detail-backdrop" for="detail-cres-4" aria-label="閉じる"></label>
+                <section class="reservation-detail-popover" role="dialog" aria-modal="true" aria-label="予約 cres-4 の詳細">
+                  <header class="reservation-detail-popover-header"><h2>予約詳細</h2><label class="reservation-detail-close" for="detail-cres-4" aria-label="閉じる">×</label></header>
+                  <dl>
+                    <div><dt>予約番号</dt><dd>cres-4</dd></div><div><dt>予約した団体名</dt><dd>さくら子ども食堂</dd></div>
+                    <div><dt>備蓄品名</dt><dd>缶詰（サバ味噌煮）</dd></div><div><dt>予約数量</dt><dd>40</dd></div>
+                    <div><dt>予約日時</dt><dd>2026年10月12日 14:30</dd></div><div><dt>受け取り希望日時</dt><dd>2026年10月17日 13:00</dd></div>
+                    <div><dt>予約状況</dt><dd><span class="badge badge-info">受け取り完了</span></dd></div><div><dt>保管場所</dt><dd>第2倉庫 C棚</dd></div>
+                    <div class="reservation-detail-full"><dt>受け取り条件</dt><dd class="reservation-detail-note">事前に日時を調整</dd></div>
+                    <div class="reservation-detail-full"><dt>連絡事項</dt><dd class="reservation-detail-note">受け取りが完了しました。</dd></div>
+                  </dl>
+                  <a class="btn btn-primary reservation-message-button" href="#"><svg class="icon"><use href="#i-message"/></svg>この団体にメッセージを送る</a>
+                </section>
+              </div>
+              <a href="#" aria-label="予約 cres-4 のメッセージ" title="メッセージ"><svg class="icon"><use href="#i-message"/></svg></a>
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

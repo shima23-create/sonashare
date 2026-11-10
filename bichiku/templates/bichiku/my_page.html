@@ -1,0 +1,108 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}マイページ | 備蓄品マッチング{% endblock %}
+{% block nav_mypage %}active{% endblock %}
+{% block content %}
+  <div class="page-head my-page-head">
+    <div>
+      <h1>マイページ</h1>
+      <p>団体アカウントの情報を確認・編集できます。</p>
+    </div>
+    {% if profile and not edit_mode %}
+      <a class="btn btn-primary" href="{% url 'bichiku:my_page' %}?edit=1">
+        <svg class="icon"><use href="#i-pencil"/></svg>編集
+      </a>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      {% if message.tags == "error" %}<div class="inventory-message">{{ message }}</div>{% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% if not profile %}
+    <section class="card my-page-card">
+      <p>団体プロフィールが登録されていません。</p>
+    </section>
+  {% else %}
+    <section class="card my-page-summary">
+      <span class="my-page-mark"><svg class="icon"><use href="#i-heart"/></svg></span>
+      <div>
+        <h2>{{ profile.organization.name }}</h2>
+        <span class="organization-type">{{ profile.organization.get_account_type_display }}</span>
+      </div>
+    </section>
+
+    {% if edit_mode %}
+      <section class="card my-page-card">
+        <h2 class="my-page-section-title"><svg class="icon"><use href="#i-heart"/></svg>団体情報</h2>
+        <form method="post" class="my-page-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="organization">
+          <div class="my-page-form-grid">
+            {% for field in organization_form %}
+              <div class="my-page-field{% if field.name == 'notes' %} my-page-field-full{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="required-mark"> *</span>{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="form-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="my-page-actions">
+            <a class="btn" href="{% url 'bichiku:my_page' %}">キャンセル</a>
+            <button type="submit" class="btn btn-primary">保存する</button>
+          </div>
+        </form>
+      </section>
+    {% else %}
+      <section class="card my-page-card">
+        <h2 class="my-page-section-title"><svg class="icon"><use href="#i-heart"/></svg>団体情報</h2>
+        <dl class="my-page-details">
+          <div><dt>団体名 <span class="required-mark">*</span></dt><dd>{{ profile.organization.name }}</dd></div>
+          <div><dt>団体種別 <span class="required-mark">*</span></dt><dd>{{ profile.organization.get_account_type_display }}</dd></div>
+          <div><dt>所在地 <span class="required-mark">*</span></dt><dd>{{ profile.organization.address|default:"未登録" }}</dd></div>
+          <div><dt>郵便番号 <span class="required-mark">*</span></dt><dd>{{ profile.organization.postal_code|default:"未登録" }}</dd></div>
+          <div><dt>電話番号 <span class="required-mark">*</span></dt><dd>{{ profile.organization.phone_number|default:"未登録" }}</dd></div>
+          <div><dt>Webサイト <span class="optional-mark">（任意）</span></dt><dd>{% if profile.organization.website_url %}<a href="{{ profile.organization.website_url }}" rel="noopener noreferrer" target="_blank">{{ profile.organization.website_url }}</a>{% else %}未登録{% endif %}</dd></div>
+          <div class="my-page-detail-full"><dt>団体紹介・活動内容 <span class="optional-mark">（任意）</span></dt><dd>{{ profile.organization.notes|default:"未登録"|linebreaksbr }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="card my-page-card">
+        <h2 class="my-page-section-title"><svg class="icon"><use href="#i-user-circle"/></svg>担当者情報</h2>
+        <dl class="my-page-details">
+          <div><dt>担当者名 <span class="required-mark">*</span></dt><dd>{{ profile.organization.contact_person_name|default:"未登録" }}</dd></div>
+          <div><dt>部署名 <span class="optional-mark">（任意）</span></dt><dd>{{ profile.organization.department_name|default:"未登録" }}</dd></div>
+          <div><dt>担当者の電話番号 <span class="optional-mark">（任意）</span></dt><dd>{{ profile.organization.contact_person_phone|default:"未登録" }}</dd></div>
+        </dl>
+      </section>
+    {% endif %}
+
+    <section class="card my-page-card">
+      <h2 class="my-page-section-title"><svg class="icon"><use href="#i-mail"/></svg>アカウント情報</h2>
+      <dl class="my-page-details">
+        <div><dt>メールアドレス <span class="required-mark">*</span></dt><dd>{{ user.email }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="card my-page-card">
+      <h2 class="my-page-section-title"><svg class="icon"><use href="#i-lock"/></svg>パスワード変更</h2>
+      <p class="my-page-password-help">現在のパスワードと新しいパスワードを入力してください。</p>
+      <form method="post" class="password-change-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="password">
+        {% for field in password_form %}
+          <div class="my-page-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}<span class="required-mark"> *</span></label>
+            {{ field }}
+            {% if field.help_text %}<div class="my-page-field-help">{{ field.help_text|safe }}</div>{% endif %}
+            {% if field.errors %}<ul class="form-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+        {% endfor %}
+        {% if password_form.non_field_errors %}<ul class="form-errors">{% for error in password_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        <button type="submit" class="btn">パスワードを変更</button>
+      </form>
+    </section>
+  {% endif %}
+{% endblock %}

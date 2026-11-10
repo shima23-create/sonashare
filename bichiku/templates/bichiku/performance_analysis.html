@@ -1,0 +1,114 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}実績分析 | 備蓄品マッチング{% endblock %}
+{% block nav_performance %}active{% endblock %}
+{% block content %}
+  <div class="page-head performance-page-head">
+    <div>
+      <h1>実績分析</h1>
+      <p>受け渡し記録から、フードロス削減につながる活動実績を確認できます。</p>
+    </div>
+  </div>
+
+  {% if not has_organization %}
+    <section class="card performance-empty">
+      団体プロフィールが登録されていないため、実績を表示できません。
+    </section>
+  {% else %}
+    <p class="performance-period">
+      集計期間：{{ period_start|date:"Y年n月" }}〜{{ today|date:"Y年n月j日" }}（過去12か月）
+    </p>
+
+    <section class="performance-stat-grid" aria-label="実績概要">
+      <article class="card performance-stat">
+        <span class="performance-stat-icon"><svg class="icon"><use href="#i-heart"/></svg></span>
+        <div class="performance-stat-value">{{ total_pickup_count }}<small>件</small></div>
+        <div class="performance-stat-label">受け渡し完了・一部受取</div>
+      </article>
+      <article class="card performance-stat">
+        <span class="performance-stat-icon"><svg class="icon"><use href="#i-package"/></svg></span>
+        <div class="performance-stat-label">受取数量（単位別）</div>
+        {% for row in quantity_by_unit %}
+          <div class="performance-unit-total">{{ row.quantity }}<small>{{ row.unit }}</small></div>
+        {% empty %}
+          <div class="performance-stat-label">受取記録はありません</div>
+        {% endfor %}
+      </article>
+      <article class="card performance-stat">
+        <span class="performance-stat-icon"><svg class="icon"><use href="#i-grid"/></svg></span>
+        <div class="performance-stat-value">{{ unique_item_count }}<small>品目</small></div>
+        <div class="performance-stat-label">受け渡し実績のある品目</div>
+      </article>
+      <article class="card performance-stat">
+        <span class="performance-stat-icon"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+        <div class="performance-stat-value">{{ partner_organization_count }}<small>団体</small></div>
+        <div class="performance-stat-label">受け渡し先・連携先</div>
+      </article>
+    </section>
+
+    <section class="performance-panels">
+      <article class="card performance-panel">
+        <div class="performance-panel-heading">
+          <div>
+            <h2>受け渡し実績の推移</h2>
+            <p>月ごとの受取記録数</p>
+          </div>
+        </div>
+        <div class="performance-chart" role="img" aria-label="過去12か月の月別受け渡し記録数">
+          {% for row in monthly_activity %}
+            <div class="performance-chart-column">
+              <span class="performance-chart-count">{{ row.count }}</span>
+              <div class="performance-chart-track">
+                <div class="performance-chart-bar" style="height: {% if row.bar_percent %}{{ row.bar_percent }}{% else %}2{% endif %}%"></div>
+              </div>
+              <span class="performance-chart-month">{{ row.month|date:"y年n月" }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="card performance-panel">
+        <div class="performance-panel-heading">
+          <div>
+            <h2>利用状況</h2>
+            <p>過去12か月に作成された予約の状態</p>
+          </div>
+        </div>
+        <ul class="performance-status-list">
+          {% for row in reservation_status_activity %}
+            <li><span>{{ row.label }}</span><strong>{{ row.count }}<small>件</small></strong></li>
+          {% empty %}
+            <li class="performance-no-data">対象期間の予約はありません。</li>
+          {% endfor %}
+        </ul>
+      </article>
+    </section>
+
+    <section class="card performance-panel performance-category-panel">
+      <div class="performance-panel-heading">
+        <div>
+          <h2>品目カテゴリ別の受取実績</h2>
+          <p>数量は単位ごとに集計しています</p>
+        </div>
+      </div>
+      <div class="performance-table-wrap">
+        <table class="performance-table">
+          <thead>
+            <tr><th>カテゴリ</th><th>受取品目数</th><th>受取数量</th></tr>
+          </thead>
+          <tbody>
+            {% for row in category_activity %}
+              <tr><td>{{ row.category }}</td><td>{{ row.item_count }}</td><td>{{ row.quantity }} {{ row.unit }}</td></tr>
+            {% empty %}
+              <tr><td colspan="3" class="performance-no-data">受け渡し記録がありません。</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="performance-note">
+      ※ 実際の受け取り記録をもとに集計しています。重量やCO₂削減量への換算は行っていません。
+    </p>
+  {% endif %}
+{% endblock %}

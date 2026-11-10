@@ -1,0 +1,78 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}メッセージ | 備蓄品マッチング{% endblock %}
+{% block nav_messages %}active{% endblock %}
+{% block content %}
+  <div class="page-head messages-page-head">
+    <div>
+      <h1>メッセージ</h1>
+      <p>提供企業とのメッセージを確認できます</p>
+    </div>
+  </div>
+
+  <section class="messages-layout card" aria-label="メッセージ">
+    <aside class="conversation-list" aria-label="会話一覧">
+      <h2>会話一覧</h2>
+      {% for row in conversation_rows %}
+        <a
+          class="conversation-item{% if active_row.conversation.pk == row.conversation.pk %} active{% endif %}"
+          href="{% url 'bichiku:conversation_detail' row.conversation.pk %}"
+        >
+          <span class="conversation-item-heading">
+            <strong>{{ row.other_organization.name }}</strong>
+            {% if row.unread_count %}<span class="badge-count">{{ row.unread_count }}</span>{% endif %}
+          </span>
+          <span class="conversation-preview">
+            {% if row.last_message %}
+              {{ row.last_message.content|truncatechars:42 }}
+            {% else %}
+              メッセージはありません
+            {% endif %}
+          </span>
+          {% if row.last_message %}<time class="conversation-time">{{ row.last_message.created_at|date:"m/d H:i" }}</time>{% endif %}
+        </a>
+      {% empty %}
+        <p class="conversation-empty">まだ会話はありません。</p>
+      {% endfor %}
+    </aside>
+
+    <div class="message-thread">
+      {% if active_row %}
+        <header class="message-thread-header">
+          <span class="message-thread-avatar"><svg class="icon"><use href="#i-message"/></svg></span>
+          <div>
+            <h2>{{ active_row.other_organization.name }}</h2>
+            <span>{{ active_row.other_organization.get_account_type_display }}</span>
+          </div>
+        </header>
+
+        <div class="message-history" aria-live="polite">
+          {% for message in active_row.conversation.messages.all %}
+            <article class="message-bubble{% if message.sender_id == user.pk %} own{% endif %}">
+              <p>{{ message.content|linebreaksbr }}</p>
+              <time>{{ message.created_at|date:"H:i" }}</time>
+            </article>
+          {% empty %}
+            <p class="message-thread-empty">この会話にはまだメッセージがありません。</p>
+          {% endfor %}
+        </div>
+
+        <form class="message-compose" method="post">
+          {% csrf_token %}
+          <div class="message-compose-field">
+            {{ form.content }}
+            {% if form.content.errors %}<ul class="form-errors">{% for error in form.content.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+          <button type="submit" class="message-send" aria-label="送信">
+            <svg class="icon"><use href="#i-send"/></svg>
+          </button>
+        </form>
+      {% else %}
+        <div class="message-no-selection">
+          <svg class="icon"><use href="#i-message"/></svg>
+          <p>会話を選択すると、メッセージを確認できます。</p>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

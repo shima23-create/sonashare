@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{% static 'bichiku/css/style.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body id="page-top">
  
   {% include "bichiku/_icons.html" %}
  
@@ -31,26 +31,47 @@
           </a>
         </li>
         <li>
-          <a href="#" class="{% block nav_reservations %}{% endblock %}">
+          <a href="{% url 'bichiku:reservation_list' %}" class="{% block nav_reservations %}{% endblock %}">
             <svg class="icon"><use href="#i-calendar-check"/></svg>予約一覧
           </a>
         </li>
         <li>
-          <a href="#" class="{% block nav_messages %}{% endblock %}">
-            <svg class="icon"><use href="#i-message"/></svg>メッセージ<span class="badge-count">1</span>
+          <a href="{% url 'bichiku:performance_analysis' %}" class="{% block nav_performance %}{% endblock %}">
+            <svg class="icon"><use href="#i-chart"/></svg>実績分析
           </a>
         </li>
         <li>
-          <a href="#" class="{% block nav_mypage %}{% endblock %}">
+          <a href="{% url 'bichiku:messages' %}" class="{% block nav_messages %}{% endblock %}">
+            <svg class="icon"><use href="#i-message"/></svg>メッセージ{% if unread_message_count %}<span class="badge-count">{{ unread_message_count }}</span>{% endif %}
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'bichiku:my_page' %}#page-top" class="{% block nav_mypage %}{% endblock %}">
             <svg class="icon"><use href="#i-user-circle"/></svg>マイページ
           </a>
         </li>
         <li class="nav-divider"></li>
-        <li>
-          <a href="#">
-            <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
-          </a>
-        </li>
+        {% if user.is_authenticated %}
+          <li>
+            <form method="post" action="{% url 'accounts:logout' %}" class="nav-logout-form">
+              {% csrf_token %}
+              <button type="submit" class="nav-logout-button">
+                <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
+              </button>
+            </form>
+          </li>
+        {% else %}
+          <li>
+            <a href="{% url 'accounts:login' %}">
+              <svg class="icon"><use href="#i-user-circle"/></svg>ログイン
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'accounts:signup' %}">
+              <svg class="icon"><use href="#i-plus"/></svg>新規登録
+            </a>
+          </li>
+        {% endif %}
       </ul>
     </aside>
  
@@ -58,11 +79,41 @@
  
       <!-- ===== ヘッダー(全ページ共通) ===== -->
       <header class="topbar">
-        <span class="topbar-title">企業メニュー</span>
+        <span class="topbar-title">
+          {% if user.is_authenticated and user.profile.organization.account_type == 2 %}
+            活動団体メニュー
+          {% else %}
+            企業メニュー
+          {% endif %}
+        </span>
         <div class="user-menu">
-          <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
-          {{ company_name|default:"A食品株式会社" }}
-          <svg class="icon"><use href="#i-chevron-down"/></svg>
+          {% if user.is_authenticated %}
+            <button type="button" class="user-menu-trigger" aria-expanded="false" aria-controls="user-dropdown">
+              <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+              <span>{% if user.profile.organization.name %}{{ user.profile.organization.name }}{% else %}{{ user.get_username }}{% endif %}</span>
+              <svg class="icon"><use href="#i-chevron-down"/></svg>
+            </button>
+            <div class="user-dropdown" id="user-dropdown" hidden>
+              <div class="user-dropdown-account">
+                <span>ログイン中</span>
+                <strong>{% if user.profile.organization.name %}{{ user.profile.organization.name }}{% else %}{{ user.get_username }}{% endif %}</strong>
+              </div>
+              <a class="user-dropdown-link" href="{% url 'bichiku:my_page' %}#page-top">
+                <svg class="icon"><use href="#i-user-circle"/></svg>マイページ
+              </a>
+              <form method="post" action="{% url 'accounts:logout' %}" class="user-dropdown-logout">
+                {% csrf_token %}
+                <button type="submit" class="user-dropdown-link">
+                  <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <a class="user-menu-trigger" href="{% url 'accounts:login' %}">
+              <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+              <span>ログイン</span>
+            </a>
+          {% endif %}
         </div>
       </header>
  
@@ -74,6 +125,35 @@
     </div>
   </div>
  
+  <script>
+    (() => {
+      const userMenu = document.querySelector(".user-menu");
+      const userMenuTrigger = document.querySelector(".user-menu-trigger[aria-controls]");
+      const userDropdown = document.getElementById("user-dropdown");
+
+      if (userMenu && userMenuTrigger && userDropdown) {
+        userMenuTrigger.addEventListener("click", () => {
+          const isExpanded = userMenuTrigger.getAttribute("aria-expanded") === "true";
+          userMenuTrigger.setAttribute("aria-expanded", String(!isExpanded));
+          userDropdown.hidden = isExpanded;
+        });
+
+        document.addEventListener("click", (event) => {
+          if (!userMenu.contains(event.target)) {
+            userMenuTrigger.setAttribute("aria-expanded", "false");
+            userDropdown.hidden = true;
+          }
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            userMenuTrigger.setAttribute("aria-expanded", "false");
+            userDropdown.hidden = true;
+          }
+        });
+      }
+    })();
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
