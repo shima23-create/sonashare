@@ -36,7 +36,12 @@ body {
   background: var(--bg);
   line-height: 1.6;
 }
- 
+
+html.app-page,
+body.app-page {
+  overflow: hidden;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -316,7 +321,11 @@ h1, h2, h3, p {
 .app {
   display: grid;
   grid-template-columns: 334px minmax(0, 1fr);
-  height: 100vh;
+  position: relative;
+  width: 111.12vw;
+  height: 111.12vh;
+  transform: scale(0.9);
+  transform-origin: top left;
 }
  
 /* ---------- サイドバー ---------- */
@@ -441,7 +450,7 @@ h1, h2, h3, p {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  height: 111.12vh;
   overflow: hidden;
   padding-top: 96px;
 }
@@ -2041,10 +2050,14 @@ h1, h2, h3, p {
 }
  
 @media (max-width: 860px) {
+  html.app-page,
+  body.app-page { overflow: auto; }
   .app {
     grid-template-columns: minmax(0, 1fr);
+    width: 100%;
     height: auto;
     min-height: 100vh;
+    transform: none;
   }
   .main {
     grid-column: 1;
