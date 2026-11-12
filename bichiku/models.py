@@ -134,6 +134,7 @@ class StockLot(TimeStampedModel):
 
     class Availability(models.TextChoices):
         AVAILABLE = "available", "提供可能"
+        INTERNAL = "internal", "提供しない(社内備蓄)" 
         RESERVED = "reserved", "予約中"
         PROVIDED = "provided", "提供済み"
 
@@ -212,6 +213,7 @@ class Offer(TimeStampedModel):
     1つのロットを、複数回に分けて提供できます(ロット : 提供 = 1 : 多)。"""
 
     class Status(models.TextChoices):
+        DRAFT = "draft", "下書き"
         RECRUITING = "recruiting", "募集中"
         CLOSED = "closed", "募集終了"
 
@@ -238,8 +240,9 @@ class Offer(TimeStampedModel):
         "募集状況",
         max_length=20,
         choices=Status.choices,
-        default=Status.RECRUITING,
+        default=Status.DRAFT,
     )
+    deadline = models.DateField("募集締切日", null=True, blank=True)   # ← この1行を追加
 
     class Meta:
         db_table = "offers"

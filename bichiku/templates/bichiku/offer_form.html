@@ -1,0 +1,41 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}{% if offer %}募集を編集{% else %}募集を作成{% endif %} | 備蓄品マッチング{% endblock %}
+{% block nav_offers %}active{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>{% if offer %}募集を編集{% else %}募集を作成{% endif %}</h1>
+      <p>{% if offer %}状態:{{ offer.get_status_display }}{% else %}下書き保存、またはそのまま公開できます{% endif %}</p>
+    </div>
+    <a href="{% url 'bichiku:offer_list' %}" class="btn btn-outline">一覧へ戻る</a>
+  </div>
+
+  <form method="post" class="card form-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-errors">
+        {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+      </div>
+    {% endif %}
+
+    {% for field in form %}
+      <div class="form-group">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+    {% endfor %}
+
+    <div class="form-actions">
+      {% if offer and offer.status == "recruiting" %}
+        <button type="submit" name="action" value="save" class="btn btn-primary">更新する</button>
+      {% else %}
+        <button type="submit" name="action" value="draft" class="btn btn-outline">下書き保存</button>
+        <button type="submit" name="action" value="publish" class="btn btn-primary">公開する</button>
+      {% endif %}
+    </div>
+  </form>
+{% endblock %}
