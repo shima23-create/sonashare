@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import offer_views
 
 app_name = "bichiku"
 
@@ -19,4 +20,11 @@ urlpatterns = [
         name="conversation_detail",
     ),
     path("my-page/", views.my_page, name="my_page"),
+        path("offers/", offer_views.offer_list, name="offer_list"),
+    path("offers/new/", offer_views.offer_create, name="offer_create"),
+    path("offers/<int:pk>/edit/", offer_views.offer_edit, name="offer_edit"),
+    path("offers/<int:pk>/publish/", offer_views.offer_publish, name="offer_publish"),
+    path("offers/<int:pk>/close/", offer_views.offer_close, name="offer_close"),
+    path("offers/<int:pk>/delete/", offer_views.offer_delete, name="offer_delete"),
+    path("lots/<int:lot_id>/draft-offer/", offer_views.offer_draft_from_lot, name="offer_draft_from_lot"),
 ]

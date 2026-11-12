@@ -1,0 +1,30 @@
+/* 募集画面・メッセージ表示用(style.css に無い部品) */
+.messages { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.message { padding: 12px 16px; border-radius: 8px; font-size: 14px; background: var(--info-bg); color: var(--info-text); }
+.message-success { background: var(--ok-bg); color: var(--ok-text); }
+.message-error { background: var(--danger-bg); color: var(--danger-text); }
+.message-warning { background: var(--warn-bg); color: var(--warn-text); }
+
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.tab { padding: 8px 14px; border-radius: 999px; font-size: 14px; text-decoration: none; color: inherit; background: #fff; border: 1px solid #e5e7eb; }
+.tab.active { background: var(--primary-tint); color: var(--primary); border-color: var(--primary); font-weight: 700; }
+
+.badge-muted { background: #f3f4f6; color: #4b5563; }
+.suggest { margin-bottom: 16px; padding: 16px; }
+.suggest h2 { font-size: 16px; margin: 0 0 4px; }
+.suggest p { margin: 0 0 12px; font-size: 13px; color: #6b7280; }
+.suggest-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #f1f5f9; }
+.inline-form { display: inline; margin: 0; }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn-outline { background: #fff; border: 1px solid #d1d5db; color: inherit; }
+.btn-danger-outline { background: #fff; border: 1px solid var(--danger-text); color: var(--danger-text); }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.form-card { padding: 24px; max-width: 720px; }
+.field-input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+.field-input:focus { outline: 2px solid var(--primary); outline-offset: 0; }
+.form-card .select { width: 100%; }
+.help { font-size: 12px; color: #6b7280; margin-top: 4px; }
+.errorlist { list-style: none; margin: 4px 0 0; padding: 0; color: var(--danger-text); font-size: 13px; }
+.form-errors { margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: var(--danger-bg); color: var(--danger-text); }
+.form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }

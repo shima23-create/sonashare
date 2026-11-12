@@ -1,0 +1,84 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}募集管理 | 備蓄品マッチング{% endblock %}
+{% block nav_offers %}active{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>募集管理</h1>
+      <p>余っている備蓄品を、必要な団体に提供する募集を管理します</p>
+    </div>
+    <a href="{% url 'bichiku:offer_create' %}" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg>募集を作成</a>
+  </div>
+
+  {% if suggestions %}
+    <div class="card suggest">
+      <h2>期限が近い備蓄品があります</h2>
+      <p>ボタンを押すと下書きを作成します。内容を確認してから公開してください。</p>
+      {% for lot in suggestions %}
+        <div class="suggest-row">
+          <div>
+            <div class="list-title">{{ lot.stock_item.name }}({{ lot.quantity }}{{ lot.stock_item.unit }})</div>
+            <div class="list-sub">消費期限 {{ lot.expiration_date|date:"Y年n月j日" }}</div>
+          </div>
+          <form class="inline-form" method="post" action="{% url 'bichiku:offer_draft_from_lot' lot.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm">下書きを作る</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <nav class="tabs">
+    <a class="tab {% if not current_status %}active{% endif %}" href="{% url 'bichiku:offer_list' %}">すべて({{ counts.all }})</a>
+    <a class="tab {% if current_status == 'draft' %}active{% endif %}" href="?status=draft">下書き({{ counts.draft|default:0 }})</a>
+    <a class="tab {% if current_status == 'recruiting' %}active{% endif %}" href="?status=recruiting">募集中({{ counts.recruiting|default:0 }})</a>
+    <a class="tab {% if current_status == 'closed' %}active{% endif %}" href="?status=closed">終了({{ counts.closed|default:0 }})</a>
+  </nav>
+
+  <div class="card table-card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>タイトル</th><th>状態</th><th>数量</th><th>予約済み</th><th>募集締切</th><th>消費期限</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for offer in offers %}
+          <tr>
+            <td class="name">{{ offer.title }}</td>
+            <td>
+              {% if offer.status == "recruiting" %}<span class="badge badge-ok">{{ offer.get_status_display }}</span>
+              {% elif offer.status == "draft" %}<span class="badge badge-warn">{{ offer.get_status_display }}</span>
+              {% else %}<span class="badge badge-muted">{{ offer.get_status_display }}</span>{% endif %}
+            </td>
+            <td>{{ offer.quantity }}{{ offer.lot.stock_item.unit }}</td>
+            <td>{{ offer.reserved_total }}{{ offer.lot.stock_item.unit }}</td>
+            <td>{{ offer.deadline|date:"Y/m/d"|default:"未設定" }}</td>
+            <td>{{ offer.lot.expiration_date|date:"Y/m/d" }}</td>
+            <td>
+              <div class="row-actions">
+                {% if offer.status != "closed" %}
+                  <a class="btn btn-outline btn-sm" href="{% url 'bichiku:offer_edit' offer.pk %}">編集</a>
+                {% endif %}
+                {% if offer.status == "draft" %}
+                  <form class="inline-form" method="post" action="{% url 'bichiku:offer_publish' offer.pk %}">{% csrf_token %}
+                    <button class="btn btn-primary btn-sm" type="submit">公開</button></form>
+                  <form class="inline-form" method="post" action="{% url 'bichiku:offer_delete' offer.pk %}" onsubmit="return confirm('この下書きを削除しますか?');">{% csrf_token %}
+                    <button class="btn btn-danger-outline btn-sm" type="submit">削除</button></form>
+                {% elif offer.status == "recruiting" %}
+                  <form class="inline-form" method="post" action="{% url 'bichiku:offer_close' offer.pk %}" onsubmit="return confirm('募集を終了しますか?');">{% csrf_token %}
+                    <button class="btn btn-danger-outline btn-sm" type="submit">終了</button></form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">募集はまだありません。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
