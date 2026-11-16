@@ -9,11 +9,11 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
- 
+
   {% include "bichiku/_icons.html" %}
- 
+
   <div class="app">
- 
+
     <!-- ===== サイドバー(全ページ共通) ===== -->
     <aside class="sidebar">
       <a href="{% url 'bichiku:dashboard' %}" class="sidebar-brand">
@@ -42,13 +42,13 @@
           </a>
         </li>
         <li>
-          <a href="{% url 'bichiku:messages' %}" class="{% block nav_messages %}{% endblock %}">
-            <svg class="icon"><use href="#i-message"/></svg>メッセージ{% if unread_message_count %}<span class="badge-count">{{ unread_message_count }}</span>{% endif %}
+          <a href="{% url 'bichiku:performance_analysis' %}" class="{% block nav_performance %}{% endblock %}">
+            <svg class="icon"><use href="#i-chart"/></svg>実績分析
           </a>
         </li>
         <li>
-          <a href="{% url 'bichiku:performance_analysis' %}" class="{% block nav_performance %}{% endblock %}">
-            <svg class="icon"><use href="#i-chart"/></svg>実績分析
+          <a href="{% url 'bichiku:messages' %}" class="{% block nav_messages %}{% endblock %}">
+            <svg class="icon"><use href="#i-message"/></svg>メッセージ{% if unread_message_count %}<span class="badge-count">{{ unread_message_count }}</span>{% endif %}
           </a>
         </li>
         <li>
@@ -57,29 +57,58 @@
           </a>
         </li>
         <li class="nav-divider"></li>
-        <li>
-          <form method="post" action="{% url 'accounts:logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="nav-logout">
-              <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
-            </button>
-          </form>
-        </li>
+        {% if request.user.is_authenticated %}
+          <li>
+            <form method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="nav-logout">
+                <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
+              </button>
+            </form>
+          </li>
+        {% else %}
+          <li>
+            <a href="{% url 'accounts:login' %}">
+              <svg class="icon"><use href="#i-user-circle"/></svg>ログイン
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'accounts:signup' %}">
+              <svg class="icon"><use href="#i-plus"/></svg>新規登録
+            </a>
+          </li>
+        {% endif %}
       </ul>
     </aside>
- 
+
     <div class="main">
- 
+
       <!-- ===== ヘッダー(全ページ共通) ===== -->
       <header class="topbar">
         <span class="topbar-title">企業メニュー</span>
-        <div class="user-menu">
-          <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
-          {{ company_name|default:"A食品株式会社" }}
-          <svg class="icon"><use href="#i-chevron-down"/></svg>
-        </div>
+        {% if request.user.is_authenticated %}
+          <details class="user-menu account-menu">
+            <summary>
+              <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+              <span class="account-name">{{ request.user.get_username }}</span>
+              <svg class="icon"><use href="#i-chevron-down"/></svg>
+            </summary>
+            <div class="account-panel">
+              <div class="account-status">ログイン中</div>
+              <a href="{% url 'bichiku:my_page' %}#page-top">マイページ</a>
+              <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit">ログアウト</button>
+              </form>
+            </div>
+          </details>
+        {% else %}
+          <div class="user-menu">
+            <a href="{% url 'accounts:login' %}">ログイン</a>
+          </div>
+        {% endif %}
       </header>
- 
+
       <!-- ===== ページごとの中身 ===== -->
       <main class="content">
         {% if messages %}
@@ -91,10 +120,10 @@
         {% endif %}
         {% block content %}{% endblock %}
       </main>
- 
+
     </div>
   </div>
- 
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>
