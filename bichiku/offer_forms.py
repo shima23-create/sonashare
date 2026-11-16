@@ -9,18 +9,28 @@ from .models import Offer, Reservation, StockLot
 
 # ---------------------------------------------------------
 # 数量まわり
+#
+# 考え方: StockLot.quantity は「まだ募集に出していない残り数量」です。
+#   - 募集を公開(募集中)にすると、その数量を StockLot.quantity から引きます。
+#   - 募集を終了すると、予約されていない分を StockLot.quantity に戻します。
+#   - 下書きは、数量を引きません。
 # ---------------------------------------------------------
-def offered_quantity(lot, exclude_offer=None):
-    """そのロットで、すでに「募集中」になっている提供数量の合計"""
-    offers = lot.offers.filter(status=Offer.Status.RECRUITING)
-    if exclude_offer is not None and exclude_offer.pk:
-        offers = offers.exclude(pk=exclude_offer.pk)
-    return offers.aggregate(total=Sum("quantity"))["total"] or 0
+def _committed_quantity(offer):
+    """その募集が、すでにロットから引いている数量(募集中のときだけ)"""
+    if offer is None or not offer.pk:
+        return 0
+    return (
+        Offer.objects.filter(pk=offer.pk, status=Offer.Status.RECRUITING)
+        .values_list("quantity", flat=True)
+        .first()
+        or 0
+    )
 
 
-def offerable_quantity(lot, exclude_offer=None):
-    """そのロットで、あと何個まで募集に出せるか"""
-    return max(lot.quantity - offered_quantity(lot, exclude_offer), 0)
+def offerable_quantity(lot, offer=None):
+    """そのロットで、いま募集に出せる数量。
+    募集中の募集を編集するときは、その募集がすでに引いている分も含みます。"""
+    return lot.quantity + _committed_quantity(offer)
 
 
 def reserved_quantity_of(offer):
@@ -65,11 +75,10 @@ def publish_problems(offer):
     elif offer.deadline < today:
         problems.append("募集締切日がすでに過ぎています。")
 
-    remaining = offerable_quantity(lot, exclude_offer=offer)
+    remaining = offerable_quantity(lot, offer)
     if offer.quantity > remaining:
         problems.append(
-            f"このロットで募集できる残りは {remaining}{lot.stock_item.unit} です"
-            "(ほかの募集中の数量と合わせて、ロットの数量を超えないようにしてください)。"
+            f"募集に出せる残り数量は {remaining}{lot.stock_item.unit} です。"
         )
     return problems
 
@@ -94,7 +103,7 @@ class OfferForm(forms.ModelForm):
             "quantity": "提供数量",
         }
         help_texts = {
-            "quantity": "ロットの数量を超えない範囲で入力してください。",
+            "quantity": "公開すると、この数量が備蓄品の数量から差し引かれます。",
             "deadline": "消費期限より前の日付にしてください。",
             "receiving_conditions": "例:平日10時〜17時、事前連絡が必要 など",
         }
@@ -113,17 +122,18 @@ class OfferForm(forms.ModelForm):
             lots = StockLot.objects.filter(pk=self.instance.lot_id)
             self.fields["lot"].disabled = True
         else:
-            # 新規は、自分の組織の「提供対象」のロットだけ選べる
+            # 新規は、自分の組織の「提供対象」で、残りがあるロットだけ選べる
             lots = StockLot.objects.filter(
                 stock_item__organization=organization,
                 availability=StockLot.Availability.AVAILABLE,
+                quantity__gt=0,
             )
         lots = lots.select_related("stock_item").order_by("expiration_date")
         self.fields["lot"].queryset = lots
         self.fields["lot"].empty_label = "ロットを選んでください"
         self.fields["lot"].label_from_instance = lambda lot: (
             f"{lot.stock_item.name}(期限 {lot.expiration_date:%Y年%m月%d日}"
-            f"・{lot.quantity}{lot.stock_item.unit}・{lot.storage_place})"
+            f"・残り{lot.quantity}{lot.stock_item.unit}・{lot.storage_place})"
         )
 
         for field in self.fields.values():
@@ -137,10 +147,11 @@ class OfferForm(forms.ModelForm):
         deadline = cleaned.get("deadline")
 
         if lot and quantity:
-            if quantity > lot.quantity:
+            limit = offerable_quantity(lot, self.instance)
+            if quantity > limit:
                 self.add_error(
                     "quantity",
-                    f"ロットの数量({lot.quantity}{lot.stock_item.unit})を超えています。",
+                    f"残り数量({limit}{lot.stock_item.unit})を超えています。",
                 )
             reserved = reserved_quantity_of(self.instance)
             if quantity < reserved:

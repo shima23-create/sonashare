@@ -58,9 +58,12 @@
         </li>
         <li class="nav-divider"></li>
         <li>
-          <a href="{% url 'bichiku:index' %}">
-            <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
-          </a>
+          <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="nav-logout">
+              <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
+            </button>
+          </form>
         </li>
       </ul>
     </aside>

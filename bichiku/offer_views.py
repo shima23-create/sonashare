@@ -9,11 +9,12 @@ from django.views.decorators.http import require_POST
 
 from .access import company_required
 from .models import EXPIRY_WARNING_DAYS, Offer, Reservation, StockLot
-from .offer_forms import (
-    OfferForm,
-    default_offer_values,
-    offerable_quantity,
-    publish_problems,
+from .offer_forms import OfferForm, default_offer_values, offerable_quantity
+from .offer_services import (
+    OfferError,
+    close_offer,
+    publish_offer,
+    update_recruiting_offer,
 )
 
 
@@ -47,7 +48,7 @@ def offer_list(request):
     )}
     counts["all"] = sum(counts.values())
 
-    # 期限が近いのに、まだ下書きも募集もない、提供対象のロット
+    # 期限が近く、残りがあるのに、まだ下書きがない、提供対象のロット
     today = timezone.localdate()
     suggestions = (
         StockLot.objects.filter(
@@ -57,7 +58,7 @@ def offer_list(request):
             expiration_date__gte=today,
             expiration_date__lte=today + timedelta(days=EXPIRY_WARNING_DAYS),
         )
-        .exclude(offers__status__in=[Offer.Status.DRAFT, Offer.Status.RECRUITING])
+        .exclude(offers__status=Offer.Status.DRAFT)
         .select_related("stock_item")
         .order_by("expiration_date")[:5]
     )
@@ -83,19 +84,22 @@ def offer_create(request):
         if form.is_valid():
             offer = form.save(commit=False)
             offer.organization = organization
-            wants_publish = request.POST.get("action") == "publish"
-            if wants_publish:
-                for problem in publish_problems(offer):
-                    form.add_error(None, problem)
-            if not form.errors:
-                offer.status = (
-                    Offer.Status.RECRUITING if wants_publish else Offer.Status.DRAFT
-                )
+            if request.POST.get("action") == "publish":
+                try:
+                    publish_offer(offer)
+                except OfferError as error:
+                    for problem in error.problems:
+                        form.add_error(None, problem)
+                else:
+                    messages.success(
+                        request,
+                        f"募集を公開しました。備蓄品の数量から {offer.quantity} 差し引きました。",
+                    )
+                    return redirect("bichiku:offer_list")
+            else:
+                offer.status = Offer.Status.DRAFT
                 offer.save()
-                messages.success(
-                    request,
-                    "募集を公開しました。" if wants_publish else "下書きとして保存しました。",
-                )
+                messages.success(request, "下書きとして保存しました。")
                 return redirect("bichiku:offer_list")
     else:
         initial = {}
@@ -130,23 +134,24 @@ def offer_edit(request, pk):
         form = OfferForm(request.POST, instance=offer, organization=organization)
         if form.is_valid():
             offer = form.save(commit=False)
-            wants_publish = request.POST.get("action") == "publish"
-            to_recruiting = wants_publish or offer.status == Offer.Status.RECRUITING
-            if to_recruiting:
-                for problem in publish_problems(offer):
-                    form.add_error(None, problem)
-            if not form.errors:
-                was_draft = offer.status == Offer.Status.DRAFT
-                offer.status = (
-                    Offer.Status.RECRUITING if to_recruiting else Offer.Status.DRAFT
-                )
-                offer.save()
-                if to_recruiting and was_draft:
-                    messages.success(request, "募集を公開しました。")
-                elif to_recruiting:
+            is_recruiting = offer.status == Offer.Status.RECRUITING
+            try:
+                if is_recruiting:
+                    update_recruiting_offer(offer)
                     messages.success(request, "募集の内容を更新しました。")
+                elif request.POST.get("action") == "publish":
+                    publish_offer(offer)
+                    messages.success(
+                        request,
+                        f"募集を公開しました。備蓄品の数量から {offer.quantity} 差し引きました。",
+                    )
                 else:
+                    offer.save()
                     messages.success(request, "下書きを保存しました。")
+            except OfferError as error:
+                for problem in error.problems:
+                    form.add_error(None, problem)
+            else:
                 return redirect("bichiku:offer_list")
     else:
         form = OfferForm(instance=offer, organization=organization)
@@ -162,15 +167,17 @@ def offer_publish(request, pk):
         messages.error(request, "下書きの募集だけ、公開できます。")
         return redirect("bichiku:offer_list")
 
-    problems = publish_problems(offer)
-    if problems:
-        for problem in problems:
+    try:
+        publish_offer(offer)
+    except OfferError as error:
+        for problem in error.problems:
             messages.error(request, problem)
         return redirect("bichiku:offer_edit", pk=offer.pk)
 
-    offer.status = Offer.Status.RECRUITING
-    offer.save()
-    messages.success(request, f"「{offer.title}」を公開しました。")
+    messages.success(
+        request,
+        f"「{offer.title}」を公開しました。備蓄品の数量から {offer.quantity} 差し引きました。",
+    )
     return redirect("bichiku:offer_list")
 
 
@@ -178,15 +185,17 @@ def offer_publish(request, pk):
 @company_required
 def offer_close(request, pk):
     offer = get_object_or_404(_offers_of(request.organization), pk=pk)
-    if offer.status != Offer.Status.RECRUITING:
-        messages.error(request, "募集中の募集だけ、終了できます。")
+    try:
+        returned = close_offer(offer)
+    except OfferError as error:
+        for problem in error.problems:
+            messages.error(request, problem)
         return redirect("bichiku:offer_list")
 
-    offer.status = Offer.Status.CLOSED
-    offer.save()
     messages.success(
         request,
-        f"「{offer.title}」の募集を終了しました。すでに入っている予約は、そのまま有効です。",
+        f"「{offer.title}」の募集を終了しました。"
+        f"予約のない {returned} を備蓄品の数量に戻しました(予約済みの分は、そのまま有効です)。",
     )
     return redirect("bichiku:offer_list")
 

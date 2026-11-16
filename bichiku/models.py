@@ -201,8 +201,9 @@ class StockLot(TimeStampedModel):
 
     @property
     def available_quantity(self):
-        """予約を差し引いた、提供できる残り数量"""
-        return max(self.quantity - self.reserved_quantity, 0)
+        """まだ募集に出していない、残りの数量。
+        募集を公開した分は quantity から引き済みなので、そのまま quantity を返します。"""
+        return self.quantity
 
 
 # =========================================================

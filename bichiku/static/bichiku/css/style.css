@@ -2139,3 +2139,23 @@ h1, h2, h3, p {
   .performance-panel { padding: 16px; }
   .performance-chart { grid-template-columns: repeat(12, minmax(24px, 1fr)); gap: 5px; }
 }
+
+/* サイドバーのログアウトボタン(.nav a と同じ見た目) */
+.nav form { margin: 0; }
+.nav .nav-logout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #4b5563;
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+}
+.nav .nav-logout:hover { background: #f3f4f6; }
