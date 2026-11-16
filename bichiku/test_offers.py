@@ -137,7 +137,9 @@ class OfferTests(TestCase):
         self.client.post(self.create, offer_data(self.lot, quantity=70, action="publish"))
         r = self.client.post(self.create, offer_data(self.lot, quantity=40, action="publish"))
         self.assertEqual(Offer.objects.count(), 1)
-        self.assertContains(r, "残りは 30")
+        self.assertContains(r, "超えています")
+        self.lot.refresh_from_db()
+        self.assertEqual(self.lot.quantity, 30)
 
     def test_expired_lot_cannot_publish(self):
         lot = make_lot(self.org, days=-1, name="古い")
@@ -235,3 +237,107 @@ class OfferTests(TestCase):
         self.assertContains(r, "予約が入っている")
         r = self.client.get(reverse("bichiku:offer_list"))
         self.assertEqual(r.context["offers"][0].reserved_total, 30)
+
+
+class QuantityDeductionTests(TestCase):
+    """募集を公開すると、ロットの数量から引かれる"""
+
+    def setUp(self):
+        _, self.org = make_user("c")
+        self.lot = make_lot(self.org, qty=100)
+        self.client.login(username="c", password="pw")
+        self.create = reverse("bichiku:offer_create")
+
+    def lot_qty(self):
+        self.lot.refresh_from_db()
+        return self.lot.quantity
+
+    def test_draft_does_not_deduct(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=30))
+        self.assertEqual(self.lot_qty(), 100)
+
+    def test_publish_directly_deducts(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=30, action="publish"))
+        self.assertEqual(self.lot_qty(), 70)
+
+    def test_publish_draft_deducts_once(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=30))
+        offer = Offer.objects.get()
+        url = reverse("bichiku:offer_publish", args=[offer.pk])
+        self.client.post(url)
+        self.client.post(url)  # 2回押しても、引くのは1回だけ
+        self.assertEqual(self.lot_qty(), 70)
+
+    def test_failed_publish_does_not_deduct(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=30, deadline="", action="publish"))
+        self.assertEqual(self.lot_qty(), 100)
+
+    def test_two_drafts_second_publish_fails(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=70))
+        self.client.post(self.create, offer_data(self.lot, quantity=70))
+        first, second = Offer.objects.order_by("id")
+        self.client.post(reverse("bichiku:offer_publish", args=[first.pk]))
+        self.client.post(reverse("bichiku:offer_publish", args=[second.pk]))
+        second.refresh_from_db()
+        self.assertEqual(second.status, "draft")
+        self.assertEqual(self.lot_qty(), 30)
+
+    def test_update_recruiting_adjusts_by_difference(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=30, action="publish"))
+        offer = Offer.objects.get()
+        edit = reverse("bichiku:offer_edit", args=[offer.pk])
+        self.client.post(edit, offer_data(self.lot, quantity=50, action="save"))
+        self.assertEqual(self.lot_qty(), 50)
+        self.client.post(edit, offer_data(self.lot, quantity=10, action="save"))
+        self.assertEqual(self.lot_qty(), 90)
+        # 残り(90) + この募集の分(10) = 100 を超える数量は、エラー
+        r = self.client.post(edit, offer_data(self.lot, quantity=101, action="save"))
+        self.assertContains(r, "超えています")
+        self.assertEqual(self.lot_qty(), 90)
+        offer.refresh_from_db()
+        self.assertEqual(offer.quantity, 10)
+
+    def test_close_returns_unreserved(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=40, action="publish"))
+        offer = Offer.objects.get()
+        self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))
+        self.assertEqual(self.lot_qty(), 100)
+        offer.refresh_from_db()
+        self.assertEqual(offer.status, "closed")
+        self.assertEqual(offer.quantity, 0)
+
+    def test_close_keeps_reserved_part(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=40, action="publish"))
+        offer = Offer.objects.get()
+        _, group = make_user("g", Organization.AccountType.GROUP)
+        Reservation.objects.create(
+            offer=offer, organization=group, reserved_quantity=15,
+            requested_pickup_at=timezone.now(),
+        )
+        self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))
+        self.assertEqual(self.lot_qty(), 85)  # 60 + 予約のない25
+        offer.refresh_from_db()
+        self.assertEqual(offer.quantity, 15)
+        self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))  # 2回目は何も戻らない
+        self.assertEqual(self.lot_qty(), 85)
+
+    def test_delete_draft_keeps_quantity(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=30))
+        offer = Offer.objects.get()
+        self.client.post(reverse("bichiku:offer_delete", args=[offer.pk]))
+        self.assertEqual(self.lot_qty(), 100)
+
+    def test_sold_out_lot_not_selectable_or_suggested(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=100, action="publish"))
+        self.assertEqual(self.lot_qty(), 0)
+        r = self.client.post(self.create, offer_data(self.lot, quantity=1))
+        self.assertEqual(Offer.objects.count(), 1)
+        r = self.client.get(reverse("bichiku:offer_list"))
+        self.assertEqual(list(r.context["suggestions"]), [])
+        r = self.client.post(reverse("bichiku:offer_draft_from_lot", args=[self.lot.pk]))
+        self.assertEqual(Offer.objects.count(), 1)
+
+    def test_partially_offered_lot_still_suggested(self):
+        self.client.post(self.create, offer_data(self.lot, quantity=40, action="publish"))
+        r = self.client.get(reverse("bichiku:offer_list"))
+        self.assertEqual(list(r.context["suggestions"]), [self.lot])

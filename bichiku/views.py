@@ -10,6 +10,10 @@ from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from .access import company_required
+from .forms import StockLotForm
+from .models import EXPIRY_WARNING_DAYS, StockItem, StockLot
+
 from .forms import (
     AccountPasswordChangeForm,
     MessageForm,
@@ -29,11 +33,12 @@ from .models import (
 )
 
 
-def _inventory_lots_for(user):
+def _inventory_lots_for(organization):
+    """自分の組織のロットだけを、消費期限が近い順に返す"""
     return (
-        StockLot.objects.select_related("stock_item")
-        .filter(stock_item__organization__members__user=user)
-        .order_by("expiration_date", "stock_item__name")
+        StockLot.objects.filter(stock_item__organization=organization)
+        .select_related("stock_item")
+        .order_by("expiration_date")
     )
 
 
@@ -41,9 +46,11 @@ def index(request):
     return render(request, "bichiku/index.html")
 
 
-@login_required
+@company_required
 def item_list(request):
-    inventory_lots = _inventory_lots_for(request.user)
+    organization = request.organization
+    inventory_lots = _inventory_lots_for(organization)
+
     query = request.GET.get("q", "").strip()
     category = request.GET.get("category", "")
     expiry = request.GET.get("expiry", "")
@@ -77,34 +84,31 @@ def item_list(request):
     if request.method == "POST":
         form = StockLotForm(request.POST)
         if form.is_valid():
+            data = form.cleaned_data
             with transaction.atomic():
-                try:
-                    organization = request.user.profile.organization
-                except Profile.DoesNotExist:
-                    organization = Organization.objects.create(
-                        name=request.user.first_name or request.user.get_username(),
-                        account_type=Organization.AccountType.COMPANY,
-                    )
-                    Profile.objects.create(
-                        user=request.user,
-                        organization=organization,
-                    )
-
-                stock_item = StockItem.objects.create(
+                # 同じ組織・品名・カテゴリ・単位の備蓄品があれば再利用し、ロットだけ足す
+                stock_item = StockItem.objects.filter(
                     organization=organization,
-                    name=form.cleaned_data["name"],
-                    category=form.cleaned_data["category"],
-                    unit=form.cleaned_data["unit"],
-                    notes=form.cleaned_data["notes"],
-                )
+                    name=data["name"],
+                    category=data["category"],
+                    unit=data["unit"],
+                ).first()
+                if stock_item is None:
+                    stock_item = StockItem.objects.create(
+                        organization=organization,
+                        name=data["name"],
+                        category=data["category"],
+                        unit=data["unit"],
+                        notes=data["notes"],
+                    )
                 StockLot.objects.create(
                     stock_item=stock_item,
-                    quantity=form.cleaned_data["quantity"],
-                    expiration_date=form.cleaned_data["expiration_date"],
-                    storage_place=form.cleaned_data["storage_place"],
-                    availability=form.cleaned_data["availability"],
+                    quantity=data["quantity"],
+                    expiration_date=data["expiration_date"],
+                    storage_place=data["storage_place"],
+                    availability=data["availability"],
                 )
-
+            messages.success(request, f"「{stock_item.name}」を登録しました。")
             return redirect("bichiku:item_list")
         show_register_form = True
     else:
@@ -120,7 +124,6 @@ def item_list(request):
             "inventory_lots": inventory_lots,
         },
     )
-
 
 @login_required
 def item_detail(request, lot_id):

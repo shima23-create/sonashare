@@ -94,10 +94,10 @@ class SignUpForm(forms.Form):
     def save(self):
         email = self.cleaned_data["email"]
         user_name = self.cleaned_data.get("company_name") or email.split("@", 1)[0]
+        # カスタムユーザーは email と user_name で作る(username / first_name は無い)
         user = User.objects.create_user(
-            username=email,
             email=email,
-            first_name=user_name,
+            user_name=user_name,
             password=self.cleaned_data["password"],
         )
         account_type = (

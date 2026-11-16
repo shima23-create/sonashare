@@ -56,7 +56,7 @@ class StockLotAdmin(admin.ModelAdmin):
 
 @admin.register(Offer)
 class OfferAdmin(admin.ModelAdmin):
-    list_display = ("title", "organization", "quantity", "status", "created_at")
+    list_display = ("title", "organization", "quantity", "status", "deadline", "created_at")
     list_filter = ("status",)
 
 
