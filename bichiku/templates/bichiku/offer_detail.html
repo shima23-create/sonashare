@@ -1,0 +1,50 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}{{ offer.title }} | 備蓄品マッチング{% endblock %}
+{% block nav_browse %}active{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>{{ offer.title }}</h1>
+      <p>{{ offer.organization.name }}</p>
+    </div>
+    <a href="{% url 'bichiku:offer_browse' %}" class="btn btn-outline">一覧へ戻る</a>
+  </div>
+
+  <div class="offer-detail-grid">
+    <section class="card offer-detail">
+      <h2>募集の内容</h2>
+      <dl class="offer-meta offer-meta-wide">
+        <div><dt>備蓄品</dt><dd>{{ offer.lot.stock_item.name }}({{ offer.lot.stock_item.get_category_display }})</dd></div>
+        <div><dt>予約できる残り</dt><dd>{{ offer.remaining }}{{ offer.lot.stock_item.unit }}(提供 {{ offer.quantity }}{{ offer.lot.stock_item.unit }})</dd></div>
+        <div><dt>消費期限</dt><dd>{{ offer.lot.expiration_date|date:"Y年n月j日" }}</dd></div>
+        <div><dt>募集締切</dt><dd>{{ offer.deadline|date:"Y年n月j日" }}</dd></div>
+        <div><dt>受取場所</dt><dd>{{ offer.prefecture }} {{ offer.pickup_location }}</dd></div>
+        {% if offer.receiving_conditions %}<div><dt>受取条件</dt><dd>{{ offer.receiving_conditions }}</dd></div>{% endif %}
+        {% if offer.description %}<div><dt>説明</dt><dd>{{ offer.description|linebreaksbr }}</dd></div>{% endif %}
+      </dl>
+    </section>
+
+    <form method="post" class="card form-card offer-reserve">
+      {% csrf_token %}
+      <h2>予約する</h2>
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+        </div>
+      {% endif %}
+      {% for field in form %}
+        <div class="form-group">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">予約を申し込む</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

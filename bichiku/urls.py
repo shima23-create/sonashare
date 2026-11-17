@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import offer_views
+from . import group_views
 
 app_name = "bichiku"
 
@@ -27,4 +28,6 @@ urlpatterns = [
     path("offers/<int:pk>/close/", offer_views.offer_close, name="offer_close"),
     path("offers/<int:pk>/delete/", offer_views.offer_delete, name="offer_delete"),
     path("lots/<int:lot_id>/draft-offer/", offer_views.offer_draft_from_lot, name="offer_draft_from_lot"),
+    path("browse/", group_views.offer_browse, name="offer_browse"),
+    path("browse/<int:pk>/", group_views.offer_detail, name="offer_detail"),
 ]

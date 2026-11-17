@@ -9,18 +9,27 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
- 
+
   {% include "bichiku/_icons.html" %}
- 
+
   <div class="app">
- 
+  {# 団体(利用者)アカウントなら、団体用のメニューを出す。所属組織がなければ、これまで通り企業用 #}
+  {% with org=request.user.profile.organization %}
+
     <!-- ===== サイドバー(全ページ共通) ===== -->
     <aside class="sidebar">
-      <a href="{% url 'bichiku:dashboard' %}" class="sidebar-brand">
+      <a href="{% if org and not org.is_company %}{% url 'bichiku:offer_browse' %}{% else %}{% url 'bichiku:dashboard' %}{% endif %}" class="sidebar-brand">
         <span class="logo-mark"><svg class="icon"><use href="#i-package"/></svg></span>
         備蓄品マッチング
       </a>
       <ul class="nav">
+        {% if org and not org.is_company %}
+        <li>
+          <a href="{% url 'bichiku:offer_browse' %}" class="{% block nav_browse %}{% endblock %}">
+            <svg class="icon"><use href="#i-search"/></svg>募集を探す
+          </a>
+        </li>
+        {% else %}
         <li>
           <a href="{% url 'bichiku:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">
             <svg class="icon"><use href="#i-grid"/></svg>ダッシュボード
@@ -36,14 +45,10 @@
             <svg class="icon"><use href="#i-heart"/></svg>募集管理
           </a>
         </li>
+        {% endif %}
         <li>
           <a href="{% url 'bichiku:reservation_list' %}" class="{% block nav_reservations %}{% endblock %}">
             <svg class="icon"><use href="#i-calendar-check"/></svg>予約一覧
-          </a>
-        </li>
-        <li>
-          <a href="{% url 'bichiku:messages' %}" class="{% block nav_messages %}{% endblock %}">
-            <svg class="icon"><use href="#i-message"/></svg>メッセージ{% if unread_message_count %}<span class="badge-count">{{ unread_message_count }}</span>{% endif %}
           </a>
         </li>
         <li>
@@ -52,34 +57,68 @@
           </a>
         </li>
         <li>
+          <a href="{% url 'bichiku:messages' %}" class="{% block nav_messages %}{% endblock %}">
+            <svg class="icon"><use href="#i-message"/></svg>メッセージ{% if unread_message_count %}<span class="badge-count">{{ unread_message_count }}</span>{% endif %}
+          </a>
+        </li>
+        <li>
           <a href="{% url 'bichiku:my_page' %}#page-top" class="{% block nav_mypage %}{% endblock %}">
             <svg class="icon"><use href="#i-user-circle"/></svg>マイページ
           </a>
         </li>
         <li class="nav-divider"></li>
-        <li>
-          <form method="post" action="{% url 'accounts:logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="nav-logout">
-              <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
-            </button>
-          </form>
-        </li>
+        {% if request.user.is_authenticated %}
+          <li>
+            <form method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="nav-logout">
+                <svg class="icon"><use href="#i-log-out"/></svg>ログアウト
+              </button>
+            </form>
+          </li>
+        {% else %}
+          <li>
+            <a href="{% url 'accounts:login' %}">
+              <svg class="icon"><use href="#i-user-circle"/></svg>ログイン
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'accounts:signup' %}">
+              <svg class="icon"><use href="#i-plus"/></svg>新規登録
+            </a>
+          </li>
+        {% endif %}
       </ul>
     </aside>
- 
+
     <div class="main">
- 
+
       <!-- ===== ヘッダー(全ページ共通) ===== -->
       <header class="topbar">
-        <span class="topbar-title">企業メニュー</span>
-        <div class="user-menu">
-          <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
-          {{ company_name|default:"A食品株式会社" }}
-          <svg class="icon"><use href="#i-chevron-down"/></svg>
-        </div>
+        <span class="topbar-title">{% if org and not org.is_company %}団体メニュー{% else %}企業メニュー{% endif %}</span>
+        {% if request.user.is_authenticated %}
+          <details class="user-menu account-menu">
+            <summary>
+              <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+              <span class="account-name">{{ request.user.get_username }}</span>
+              <svg class="icon"><use href="#i-chevron-down"/></svg>
+            </summary>
+            <div class="account-panel">
+              <div class="account-status">ログイン中</div>
+              <a href="{% url 'bichiku:my_page' %}#page-top">マイページ</a>
+              <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit">ログアウト</button>
+              </form>
+            </div>
+          </details>
+        {% else %}
+          <div class="user-menu">
+            <a href="{% url 'accounts:login' %}">ログイン</a>
+          </div>
+        {% endif %}
       </header>
- 
+
       <!-- ===== ページごとの中身 ===== -->
       <main class="content">
         {% if messages %}
@@ -91,10 +130,11 @@
         {% endif %}
         {% block content %}{% endblock %}
       </main>
- 
+
     </div>
+  {% endwith %}
   </div>
- 
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -38,3 +38,20 @@ def company_required(view):
         return view(request, *args, **kwargs)
 
     return login_required(wrapper)
+
+
+def group_required(view):
+    """活動団体(利用者)だけが使える画面につけるデコレーター。
+    company_required の反対。通れば request.organization に所属組織が入る。"""
+
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        organization = get_organization(request.user)
+        if organization is None:
+            return _forbidden("所属組織が設定されていません。管理者に連絡してください。")
+        if organization.is_company:
+            return _forbidden("この画面は、活動団体(利用者)アカウント専用です。")
+        request.organization = organization
+        return view(request, *args, **kwargs)
+
+    return login_required(wrapper)
