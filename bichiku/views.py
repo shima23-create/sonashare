@@ -10,9 +10,9 @@ from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .access import company_required
+from .access import company_required, get_organization
+from .models import EXPIRY_WARNING_DAYS, Organization, StockItem, StockLot
 from .forms import StockLotForm
-from .models import EXPIRY_WARNING_DAYS, StockItem, StockLot
 
 from .forms import (
     AccountPasswordChangeForm,
@@ -33,8 +33,11 @@ from .models import (
 )
 
 
-def _inventory_lots_for(organization):
-    """自分の組織のロットだけを、消費期限が近い順に返す"""
+def _inventory_lots_for(owner):
+    """自分の組織のロットだけを、消費期限が近い順に返す。
+    ユーザー(request.user)でも、組織(Organization)でも渡せる。
+    所属組織がないユーザーには、何も返さない。"""
+    organization = owner if isinstance(owner, Organization) else get_organization(owner)
     return (
         StockLot.objects.filter(stock_item__organization=organization)
         .select_related("stock_item")

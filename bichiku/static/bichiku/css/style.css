@@ -2159,3 +2159,13 @@ h1, h2, h3, p {
   text-align: left;
 }
 .nav .nav-logout:hover { background: #f3f4f6; }
+
+/* ヘッダーのアカウントメニュー */
+.account-menu { position: relative; }
+.account-menu summary { list-style: none; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.account-menu summary::-webkit-details-marker { display: none; }
+.account-panel { position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 8px; z-index: 20; }
+.account-status { padding: 8px 12px; font-size: 12px; color: #6b7280; }
+.account-panel form { margin: 0; }
+.account-panel a, .account-panel button { display: flex; width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; font: inherit; color: #374151; cursor: pointer; text-align: left; }
+.account-panel a:hover, .account-panel button:hover { background: #f3f4f6; }
