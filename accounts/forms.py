@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 
 from bichiku.models import Organization, Profile
+from bichiku.access import get_organization
 
 User = get_user_model()
 
@@ -47,6 +48,14 @@ class LoginForm(forms.Form):
                 raise forms.ValidationError(
                     "メールアドレスまたはパスワードが正しくありません。"
                 )
+                        # 選んだ利用者種別と、アカウントの種別が違うときは、案内を出す
+            organization = get_organization(user)
+            if organization is not None:
+                chose_company = cleaned_data.get("user_type") == "company"
+                if chose_company != organization.is_company:
+                    raise forms.ValidationError(
+                        "選んだ利用者種別が、このアカウントの種別と違います。"
+                    )
             cleaned_data["user"] = user
 
         return cleaned_data

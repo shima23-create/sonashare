@@ -4,7 +4,17 @@ from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from bichiku.access import get_organization
+
 from .forms import LoginForm, SignUpForm
+
+
+def _home_url_name(user):
+    """ログイン後に最初に開く画面。団体(利用者)は「募集を探す」、企業はダッシュボード"""
+    organization = get_organization(user)
+    if organization is not None and not organization.is_company:
+        return "bichiku:offer_browse"
+    return "bichiku:dashboard"
 
 
 def _next_url(request):
@@ -19,7 +29,7 @@ def _next_url(request):
 
 def signup_view(request):
     if request.user.is_authenticated:
-        return redirect("bichiku:dashboard")
+        return redirect(_home_url_name(request.user))
 
     if request.method == "POST":
         form = SignUpForm(request.POST)
@@ -32,7 +42,7 @@ def signup_view(request):
             )
             if authenticated_user is not None:
                 login(request, authenticated_user)
-            return redirect("bichiku:dashboard")
+            return redirect(_home_url_name(user))
     else:
         form = SignUpForm()
 
@@ -41,14 +51,14 @@ def signup_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect(_next_url(request) or "bichiku:dashboard")
+        return redirect(_next_url(request) or _home_url_name(request.user))
 
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
             user = form.cleaned_data["user"]
             login(request, user)
-            return redirect(_next_url(request) or "bichiku:dashboard")
+            return redirect(_next_url(request) or _home_url_name(user))
     else:
         form = LoginForm()
 
