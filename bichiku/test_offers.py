@@ -173,7 +173,7 @@ class OfferTests(TestCase):
     def test_prefecture_is_required(self):
         r = self.client.post(self.create, offer_data(self.lot, prefecture=""))
         self.assertEqual(Offer.objects.count(), 0)
-        self.assertContains(r, "このフィールドは必須です")
+        self.assertIn("prefecture", r.context["form"].errors)
 
     def test_prefecture_defaults_to_organization(self):
         self.org.prefecture = "大阪府"
