@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -8,8 +8,21 @@ from django.utils import timezone
 from .models import Offer, Organization, Profile, Reservation, StockItem, StockLot
 
 
+User = get_user_model()
+USERS = {}
+
+
+def login_as(client, name):
+    """標準ユーザーでも、メールでログインするカスタムユーザーでも動くようにする"""
+    client.force_login(USERS[name])
+
+
 def make_user(name, account_type=Organization.AccountType.COMPANY, with_profile=True):
-    user = User.objects.create_user(name, password="pw")
+    if "user_name" in [f.name for f in User._meta.get_fields()]:
+        user = User.objects.create_user(email=f"{name}@example.com", user_name=name, password="pw")
+    else:
+        user = User.objects.create_user(name, password="pw")
+    USERS[name] = user
     org = None
     if with_profile:
         org = Organization.objects.create(name=name, account_type=account_type)
@@ -17,9 +30,9 @@ def make_user(name, account_type=Organization.AccountType.COMPANY, with_profile=
     return user, org
 
 
-def make_lot(org, days=20, qty=100, availability=StockLot.Availability.AVAILABLE, name="水"):
+def make_lot(org, days=20, qty=100, availability=StockLot.Availability.AVAILABLE, name="水", category=StockItem.Category.DRINK):
     item = StockItem.objects.create(
-        organization=org, name=name, category=StockItem.Category.DRINK, unit="本"
+        organization=org, name=name, category=category, unit="本"
     )
     return StockLot.objects.create(
         stock_item=item,
@@ -36,6 +49,7 @@ def offer_data(lot, **kw):
         "title": "水を提供します",
         "quantity": 10,
         "pickup_location": "倉庫A",
+        "prefecture": "東京都",
         "receiving_conditions": "",
         "description": "",
         "deadline": (timezone.localdate() + timedelta(days=5)).isoformat(),
@@ -49,18 +63,18 @@ class AccessTests(TestCase):
     def test_anonymous_redirected(self):
         r = self.client.get(reverse("bichiku:offer_list"))
         self.assertEqual(r.status_code, 302)
-        self.assertIn("/login/", r["Location"])
+        self.assertIn("login", r["Location"])
 
     def test_no_profile_forbidden_and_no_org_created(self):
         make_user("x", with_profile=False)
-        self.client.login(username="x", password="pw")
+        login_as(self.client, "x")
         for name in ("offer_list", "item_list"):
             self.assertEqual(self.client.get(reverse(f"bichiku:{name}")).status_code, 403)
         self.assertEqual(Organization.objects.count(), 0)
 
     def test_group_forbidden(self):
         make_user("g", Organization.AccountType.GROUP)
-        self.client.login(username="g", password="pw")
+        login_as(self.client, "g")
         self.assertEqual(self.client.get(reverse("bichiku:offer_list")).status_code, 403)
 
     def test_post_only_views(self):
@@ -68,7 +82,7 @@ class AccessTests(TestCase):
         offer = Offer.objects.create(
             lot=make_lot(org), organization=org, title="t", quantity=1, pickup_location="p"
         )
-        self.client.login(username="c", password="pw")
+        login_as(self.client, "c")
         for name in ("offer_publish", "offer_close", "offer_delete"):
             self.assertEqual(
                 self.client.get(reverse(f"bichiku:{name}", args=[offer.pk])).status_code, 405
@@ -78,7 +92,7 @@ class AccessTests(TestCase):
 class ItemListTests(TestCase):
     def setUp(self):
         _, self.org = make_user("c")
-        self.client.login(username="c", password="pw")
+        login_as(self.client, "c")
 
     def post(self, **kw):
         data = {
@@ -112,7 +126,7 @@ class OfferTests(TestCase):
     def setUp(self):
         _, self.org = make_user("c")
         self.lot = make_lot(self.org)
-        self.client.login(username="c", password="pw")
+        login_as(self.client, "c")
         self.create = reverse("bichiku:offer_create")
 
     def test_create_draft_then_publish(self):
@@ -155,6 +169,27 @@ class OfferTests(TestCase):
         r = self.client.post(self.create, offer_data(self.lot, deadline="", action="publish"))
         self.assertEqual(Offer.objects.count(), 0)
         self.assertContains(r, "募集締切日")
+
+    def test_prefecture_is_required(self):
+        r = self.client.post(self.create, offer_data(self.lot, prefecture=""))
+        self.assertEqual(Offer.objects.count(), 0)
+        self.assertIn("prefecture", r.context["form"].errors)
+
+    def test_prefecture_defaults_to_organization(self):
+        self.org.prefecture = "大阪府"
+        self.org.save()
+        r = self.client.get(self.create)
+        self.assertEqual(r.context["form"].initial["prefecture"], "大阪府")
+        self.client.post(reverse("bichiku:offer_draft_from_lot", args=[self.lot.pk]))
+        self.assertEqual(Offer.objects.get().prefecture, "大阪府")
+
+    def test_draft_without_prefecture_cannot_be_published(self):
+        self.client.post(reverse("bichiku:offer_draft_from_lot", args=[self.lot.pk]))
+        offer = Offer.objects.get()
+        self.assertEqual(offer.prefecture, "")
+        self.client.post(reverse("bichiku:offer_publish", args=[offer.pk]))
+        offer.refresh_from_db()
+        self.assertEqual(offer.status, "draft")
 
     def test_deadline_after_expiry_rejected(self):
         late = (self.lot.expiration_date + timedelta(days=1)).isoformat()
@@ -245,7 +280,7 @@ class QuantityDeductionTests(TestCase):
     def setUp(self):
         _, self.org = make_user("c")
         self.lot = make_lot(self.org, qty=100)
-        self.client.login(username="c", password="pw")
+        login_as(self.client, "c")
         self.create = reverse("bichiku:offer_create")
 
     def lot_qty(self):

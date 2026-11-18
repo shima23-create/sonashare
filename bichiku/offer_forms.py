@@ -4,7 +4,7 @@ from django import forms
 from django.db.models import Sum
 from django.utils import timezone
 
-from .models import Offer, Reservation, StockLot
+from .models import PREFECTURES, Offer, Reservation, StockLot
 
 
 # ---------------------------------------------------------
@@ -56,6 +56,7 @@ def default_offer_values(lot):
         "title": f"{lot.stock_item.name} {quantity}{lot.stock_item.unit}",
         "quantity": quantity,
         "pickup_location": lot.storage_place,
+        "prefecture": lot.stock_item.organization.prefecture,
         "deadline": deadline,
     }
 
@@ -70,6 +71,8 @@ def publish_problems(offer):
         problems.append("このロットは、提供対象になっていません。備蓄品の登録内容を確認してください。")
     if lot.expiration_date < today:
         problems.append("消費期限が過ぎているため、募集できません。")
+    if not offer.prefecture:
+        problems.append("公開するには、受取場所の都道府県を選んでください。")
     if offer.deadline is None:
         problems.append("公開するには、募集締切日を入力してください。")
     elif offer.deadline < today:
@@ -94,6 +97,7 @@ class OfferForm(forms.ModelForm):
             "title",
             "quantity",
             "pickup_location",
+            "prefecture",
             "receiving_conditions",
             "description",
             "deadline",
@@ -135,6 +139,12 @@ class OfferForm(forms.ModelForm):
             f"{lot.stock_item.name}(期限 {lot.expiration_date:%Y年%m月%d日}"
             f"・残り{lot.quantity}{lot.stock_item.unit}・{lot.storage_place})"
         )
+
+        # 受取場所の都道府県は必須。新規のときは、自分の組織の都道府県を初めから選んでおく
+        self.fields["prefecture"].required = True
+        self.fields["prefecture"].choices = [("", "都道府県を選んでください")] + list(PREFECTURES)
+        if not self.instance.pk and not self.initial.get("prefecture"):
+            self.initial["prefecture"] = organization.prefecture
 
         for field in self.fields.values():
             css = "select" if isinstance(field.widget, forms.Select) else "field-input"

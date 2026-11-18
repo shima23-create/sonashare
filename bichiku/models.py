@@ -17,6 +17,21 @@ EXPIRY_STATUS_INFO = {
 }
 
 
+# 都道府県(募集の「受取場所」の絞り込みに使う)。保存する値は、画面に出す名前と同じです。
+PREFECTURES = [
+    (name, name)
+    for name in (
+        "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
+        "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
+        "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県",
+        "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県",
+        "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県",
+        "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県",
+        "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県",
+    )
+]
+
+
 class TimeStampedModel(models.Model):
     """登録日時・更新日時を自動で持つ共通の親クラス(テーブルは作られません)"""
 
@@ -43,6 +58,9 @@ class Organization(TimeStampedModel):
     name = models.CharField("企業・団体名", max_length=100)
     account_type = models.IntegerField("アカウント種別", choices=AccountType.choices)
     postal_code = models.CharField("郵便番号", max_length=8, blank=True)
+    prefecture = models.CharField(
+        "都道府県", max_length=4, choices=PREFECTURES, blank=True
+    )
     address = models.CharField("所在地", max_length=200, blank=True)
     phone_number = models.CharField("電話番号", max_length=15, blank=True)
     website_url = models.URLField("ウェブサイト", max_length=200, blank=True)
@@ -134,7 +152,7 @@ class StockLot(TimeStampedModel):
 
     class Availability(models.TextChoices):
         AVAILABLE = "available", "提供可能"
-        INTERNAL = "internal", "提供しない(社内備蓄)" 
+        INTERNAL = "internal", "提供しない(社内備蓄)"
         RESERVED = "reserved", "予約中"
         PROVIDED = "provided", "提供済み"
 
@@ -236,6 +254,9 @@ class Offer(TimeStampedModel):
         "提供数量", validators=[MinValueValidator(1)]
     )
     pickup_location = models.CharField("受取場所", max_length=100)
+    prefecture = models.CharField(
+        "受取場所の都道府県", max_length=4, choices=PREFECTURES, blank=True
+    )
     receiving_conditions = models.CharField("受取条件", max_length=200, blank=True)
     status = models.CharField(
         "募集状況",
@@ -243,7 +264,7 @@ class Offer(TimeStampedModel):
         choices=Status.choices,
         default=Status.DRAFT,
     )
-    deadline = models.DateField("募集締切日", null=True, blank=True)   # ← この1行を追加
+    deadline = models.DateField("募集締切日", null=True, blank=True)
 
     class Meta:
         db_table = "offers"

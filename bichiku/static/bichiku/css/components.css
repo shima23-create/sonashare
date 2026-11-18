@@ -28,3 +28,38 @@
 .errorlist { list-style: none; margin: 4px 0 0; padding: 0; color: var(--danger-text); font-size: 13px; }
 .form-errors { margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: var(--danger-bg); color: var(--danger-text); }
 .form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
+
+/* 活動団体側: 募集を探す・詳細 */
+.offer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.offer-card { display: block; padding: 20px; color: inherit; text-decoration: none; transition: box-shadow .15s; }
+.offer-card:hover { box-shadow: 0 6px 20px rgba(0, 0, 0, .1); }
+.offer-card h2 { font-size: 17px; margin: 12px 0 4px; }
+.offer-card-head { display: flex; justify-content: space-between; align-items: center; }
+.offer-remaining { font-weight: 700; color: var(--primary); }
+.offer-provider { margin: 0 0 12px; color: #6b7280; font-size: 14px; }
+.offer-meta { margin: 0; display: grid; gap: 6px; font-size: 14px; }
+.offer-meta div { display: flex; gap: 12px; }
+.offer-meta dt { color: #6b7280; min-width: 5.5em; }
+.offer-meta dd { margin: 0; }
+.offer-empty { padding: 32px; text-align: center; color: #6b7280; grid-column: 1 / -1; }
+.offer-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.offer-detail, .offer-reserve { padding: 24px; max-width: none; }
+.offer-detail h2, .offer-reserve h2 { font-size: 17px; margin: 0 0 16px; }
+@media (max-width: 900px) { .offer-detail-grid { grid-template-columns: 1fr; } }
+
+/* 募集を探す: 絞り込み */
+.browse-filter { padding: 20px; margin-bottom: 12px; display: grid; gap: 16px; }
+.browse-filter-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 16px; }
+.browse-filter-wide { min-width: 0; }
+.browse-genres { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.browse-genres legend { padding: 0; margin-bottom: 8px; width: 100%; }
+.chip { cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span { display: inline-block; padding: 8px 16px; border-radius: 999px; border: 1px solid #d1d5db; background: #fff; font-size: 14px; font-weight: 600; color: #4b5563; }
+.chip input:checked + span { background: var(--primary-tint); border-color: var(--primary); color: var(--primary); }
+.chip input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
+.browse-filter-actions { display: flex; align-items: center; gap: 16px; }
+.browse-count { margin: 0 0 12px; color: #6b7280; font-size: 14px; }
+@media (max-width: 900px) { .browse-filter-row { grid-template-columns: 1fr 1fr; } .browse-filter-wide { grid-column: 1 / -1; } }
+.filter-clear { color: var(--primary); font-weight: 600; text-decoration: none; }
+.filter-clear:hover { text-decoration: underline; }

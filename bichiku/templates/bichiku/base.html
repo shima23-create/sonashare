@@ -13,14 +13,23 @@
   {% include "bichiku/_icons.html" %}
 
   <div class="app">
+  {# 団体(利用者)アカウントなら、団体用のメニューを出す。所属組織がなければ、これまで通り企業用 #}
+  {% with org=request.user.profile.organization %}
 
     <!-- ===== サイドバー(全ページ共通) ===== -->
     <aside class="sidebar">
-      <a href="{% url 'bichiku:dashboard' %}" class="sidebar-brand">
+      <a href="{% if org and not org.is_company %}{% url 'bichiku:offer_browse' %}{% else %}{% url 'bichiku:dashboard' %}{% endif %}" class="sidebar-brand">
         <span class="logo-mark"><svg class="icon"><use href="#i-package"/></svg></span>
         備蓄品マッチング
       </a>
       <ul class="nav">
+        {% if org and not org.is_company %}
+        <li>
+          <a href="{% url 'bichiku:offer_browse' %}" class="{% block nav_browse %}{% endblock %}">
+            <svg class="icon"><use href="#i-search"/></svg>募集を探す
+          </a>
+        </li>
+        {% else %}
         <li>
           <a href="{% url 'bichiku:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">
             <svg class="icon"><use href="#i-grid"/></svg>ダッシュボード
@@ -36,6 +45,7 @@
             <svg class="icon"><use href="#i-heart"/></svg>募集管理
           </a>
         </li>
+        {% endif %}
         <li>
           <a href="{% url 'bichiku:reservation_list' %}" class="{% block nav_reservations %}{% endblock %}">
             <svg class="icon"><use href="#i-calendar-check"/></svg>予約一覧
@@ -85,7 +95,7 @@
 
       <!-- ===== ヘッダー(全ページ共通) ===== -->
       <header class="topbar">
-        <span class="topbar-title">企業メニュー</span>
+        <span class="topbar-title">{% if org and not org.is_company %}団体メニュー{% else %}企業メニュー{% endif %}</span>
         {% if request.user.is_authenticated %}
           <details class="user-menu account-menu">
             <summary>
@@ -122,6 +132,7 @@
       </main>
 
     </div>
+  {% endwith %}
   </div>
 
   {% block extra_js %}{% endblock %}
