@@ -63,3 +63,8 @@
 @media (max-width: 900px) { .browse-filter-row { grid-template-columns: 1fr 1fr; } .browse-filter-wide { grid-column: 1 / -1; } }
 .filter-clear { color: var(--primary); font-weight: 600; text-decoration: none; }
 .filter-clear:hover { text-decoration: underline; }
+
+/* 予約一覧: 受け取り数量の入力 */
+.complete-form { display: inline-flex; gap: 6px; align-items: center; }
+.complete-qty { width: 5em; padding: 6px 8px; }
+.reservation-detail-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }

@@ -35,3 +35,20 @@ class ReservationForm(forms.Form):
         self.fields["quantity"].help_text = (
             f"残り {self.remaining}{offer.lot.stock_item.unit} まで予約できます。"
         )
+
+
+class CompleteForm(forms.Form):
+    received_quantity = forms.IntegerField(label="受け取った数量", min_value=1)
+
+    def __init__(self, *args, reservation, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["received_quantity"].max_value = reservation.reserved_quantity
+        self.reservation = reservation
+
+    def clean_received_quantity(self):
+        value = self.cleaned_data["received_quantity"]
+        if value > self.reservation.reserved_quantity:
+            raise forms.ValidationError(
+                f"予約した数量({self.reservation.reserved_quantity})を超えています。"
+            )
+        return value

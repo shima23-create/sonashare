@@ -1,3 +1,4 @@
+from . import reservation_views
 from django.urls import path
 from . import views
 from . import offer_views
@@ -12,7 +13,10 @@ urlpatterns = [
     path("items/<int:lot_id>/edit/", views.item_edit, name="item_edit"),
     path("items/<int:lot_id>/delete/", views.item_delete, name="item_delete"),
     path("dashboard/", views.dashboard, name="dashboard"),
-    path("reservations/", views.reservation_list, name="reservation_list"),
+    path("reservations/", reservation_views.reservation_list, name="reservation_list"),
+    path("reservations/<int:pk>/approve/", reservation_views.reservation_approve, name="reservation_approve"),
+    path("reservations/<int:pk>/cancel/", reservation_views.reservation_cancel, name="reservation_cancel"),
+    path("reservations/<int:pk>/complete/", reservation_views.reservation_complete, name="reservation_complete"),
     path("performance/", views.performance_analysis, name="performance_analysis"),
     path("messages/", views.messages_view, name="messages"),
     path(
