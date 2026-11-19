@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 from django import forms
-from django.db.models import Sum
+from django.db.models import F, Q, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from .models import PREFECTURES, Offer, Reservation, StockLot
@@ -10,27 +11,36 @@ from .models import PREFECTURES, Offer, Reservation, StockLot
 # ---------------------------------------------------------
 # 数量まわり
 #
-# 考え方: StockLot.quantity は「まだ募集に出していない残り数量」です。
-#   - 募集を公開(募集中)にすると、その数量を StockLot.quantity から引きます。
-#   - 募集を終了すると、予約されていない分を StockLot.quantity に戻します。
-#   - 下書きは、数量を引きません。
+# 考え方: StockLot.quantity は「実際にある在庫」です。
+#   - 募集を公開しても、予約が入っても、在庫の数量は変わりません。
+#   - 在庫が減るのは、企業が「受け取り完了」を記録したときだけです。
+#   - 募集に確保されている数量は、Offer.quantity(募集中・終了後も予約が残る分)の
+#     合計として、そのつど計算します(=「予約に使える残り」を記録しておく仕組み)。
 # ---------------------------------------------------------
-def _committed_quantity(offer):
-    """その募集が、すでにロットから引いている数量(募集中のときだけ)"""
-    if offer is None or not offer.pk:
-        return 0
-    return (
-        Offer.objects.filter(pk=offer.pk, status=Offer.Status.RECRUITING)
-        .values_list("quantity", flat=True)
-        .first()
-        or 0
-    )
+HOLDING_STATUSES = (Offer.Status.RECRUITING, Offer.Status.CLOSED)
+
+
+def committed_quantity(lot, offer=None):
+    """そのロットから、募集に確保されている数量(自分自身の募集は除く)"""
+    others = Offer.objects.filter(lot=lot, status__in=HOLDING_STATUSES)
+    if offer is not None and offer.pk:
+        others = others.exclude(pk=offer.pk)
+    return others.aggregate(total=Sum("quantity"))["total"] or 0
 
 
 def offerable_quantity(lot, offer=None):
-    """そのロットで、いま募集に出せる数量。
-    募集中の募集を編集するときは、その募集がすでに引いている分も含みます。"""
-    return lot.quantity + _committed_quantity(offer)
+    """そのロットで、いま募集に出せる数量(在庫 − ほかの募集の確保分)"""
+    return max(lot.quantity - committed_quantity(lot, offer), 0)
+
+
+def with_free_quantity(lots):
+    """在庫のうち、募集に確保されていない分が残っているロットだけに絞る"""
+    return lots.annotate(
+        committed=Coalesce(
+            Sum("offers__quantity", filter=Q(offers__status__in=HOLDING_STATUSES)),
+            0,
+        )
+    ).filter(quantity__gt=F("committed"))
 
 
 def reserved_quantity_of(offer):
@@ -107,7 +117,7 @@ class OfferForm(forms.ModelForm):
             "quantity": "提供数量",
         }
         help_texts = {
-            "quantity": "公開すると、この数量が備蓄品の数量から差し引かれます。",
+            "quantity": "公開すると、この数量を募集用に確保します。備蓄品の数量は、受け取り完了まで変わりません。",
             "deadline": "消費期限より前の日付にしてください。",
             "receiving_conditions": "例:平日10時〜17時、事前連絡が必要 など",
         }
@@ -127,17 +137,18 @@ class OfferForm(forms.ModelForm):
             self.fields["lot"].disabled = True
         else:
             # 新規は、自分の組織の「提供対象」で、残りがあるロットだけ選べる
-            lots = StockLot.objects.filter(
-                stock_item__organization=organization,
-                availability=StockLot.Availability.AVAILABLE,
-                quantity__gt=0,
+            lots = with_free_quantity(
+                StockLot.objects.filter(
+                    stock_item__organization=organization,
+                    availability=StockLot.Availability.AVAILABLE,
+                )
             )
         lots = lots.select_related("stock_item").order_by("expiration_date")
         self.fields["lot"].queryset = lots
         self.fields["lot"].empty_label = "ロットを選んでください"
         self.fields["lot"].label_from_instance = lambda lot: (
             f"{lot.stock_item.name}(期限 {lot.expiration_date:%Y年%m月%d日}"
-            f"・残り{lot.quantity}{lot.stock_item.unit}・{lot.storage_place})"
+            f"・募集に出せる残り{offerable_quantity(lot)}{lot.stock_item.unit}・{lot.storage_place})"
         )
 
         # 受取場所の都道府県は必須。新規のときは、自分の組織の都道府県を初めから選んでおく

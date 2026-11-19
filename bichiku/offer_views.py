@@ -9,7 +9,12 @@ from django.views.decorators.http import require_POST
 
 from .access import company_required
 from .models import EXPIRY_WARNING_DAYS, Offer, Reservation, StockLot
-from .offer_forms import OfferForm, default_offer_values, offerable_quantity
+from .offer_forms import (
+    OfferForm,
+    default_offer_values,
+    offerable_quantity,
+    with_free_quantity,
+)
 from .offer_services import (
     OfferError,
     close_offer,
@@ -51,12 +56,13 @@ def offer_list(request):
     # 期限が近く、残りがあるのに、まだ下書きがない、提供対象のロット
     today = timezone.localdate()
     suggestions = (
-        StockLot.objects.filter(
-            stock_item__organization=organization,
-            availability=StockLot.Availability.AVAILABLE,
-            quantity__gt=0,
-            expiration_date__gte=today,
-            expiration_date__lte=today + timedelta(days=EXPIRY_WARNING_DAYS),
+        with_free_quantity(
+            StockLot.objects.filter(
+                stock_item__organization=organization,
+                availability=StockLot.Availability.AVAILABLE,
+                expiration_date__gte=today,
+                expiration_date__lte=today + timedelta(days=EXPIRY_WARNING_DAYS),
+            )
         )
         .exclude(offers__status=Offer.Status.DRAFT)
         .select_related("stock_item")
@@ -93,7 +99,7 @@ def offer_create(request):
                 else:
                     messages.success(
                         request,
-                        f"募集を公開しました。備蓄品の数量から {offer.quantity} 差し引きました。",
+                        "募集を公開しました。備蓄品の数量は、受け取り完了まで変わりません。",
                     )
                     return redirect("bichiku:offer_list")
             else:
@@ -143,7 +149,7 @@ def offer_edit(request, pk):
                     publish_offer(offer)
                     messages.success(
                         request,
-                        f"募集を公開しました。備蓄品の数量から {offer.quantity} 差し引きました。",
+                        "募集を公開しました。備蓄品の数量は、受け取り完了まで変わりません。",
                     )
                 else:
                     offer.save()
@@ -176,7 +182,7 @@ def offer_publish(request, pk):
 
     messages.success(
         request,
-        f"「{offer.title}」を公開しました。備蓄品の数量から {offer.quantity} 差し引きました。",
+        f"「{offer.title}」を公開しました。備蓄品の数量は、受け取り完了まで変わりません。",
     )
     return redirect("bichiku:offer_list")
 
@@ -195,7 +201,7 @@ def offer_close(request, pk):
     messages.success(
         request,
         f"「{offer.title}」の募集を終了しました。"
-        f"予約のない {returned} を備蓄品の数量に戻しました(予約済みの分は、そのまま有効です)。",
+        f"予約のない {returned} の確保を解除しました(予約済みの分は、そのまま有効です)。",
     )
     return redirect("bichiku:offer_list")
 
