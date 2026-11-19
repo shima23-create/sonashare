@@ -107,9 +107,9 @@ def reserve_offer(*, offer_id, organization, user, quantity, requested_pickup_at
 # 予約の承認・取り消し・受け取り完了
 #
 # 数量の考え方(offer_services.py と同じ)
-#   - 募集を公開した時点で、その数量は StockLot.quantity から引いてある
-#   - 予約は、その募集の数量の一部を押さえている(予約中・承認済み)
-#   - 受け取りが終わった分は、募集の数量からも引く
+#   - StockLot.quantity は実在庫。募集の公開・予約では減らない
+#   - 予約は、その募集の確保数量の一部を押さえている(予約中・承認済み)
+#   - 企業が受け取り完了を記録したときに、在庫と募集の確保数量を、ともに減らす
 # ---------------------------------------------------------
 def _notify_organization(organization, *, title, content, reservation):
     User = get_user_model()
@@ -159,7 +159,7 @@ def approve_reservation(reservation_id):
 @transaction.atomic
 def cancel_reservation(reservation_id, *, by_company):
     """予約を取り消す(団体のキャンセル、企業の却下・取り消し)"""
-    reservation, offer, lot = _lock(reservation_id)
+    reservation, offer, _lot = _lock(reservation_id)
     if reservation.status not in Reservation.ACTIVE_STATUSES:
         raise ReservationError(["予約中・承認済みの予約だけ、取り消せます。"])
 
@@ -168,10 +168,8 @@ def cancel_reservation(reservation_id, *, by_company):
     reservation.status = Reservation.Status.CANCELLED
     reservation.save(update_fields=["status", "updated_at"])
 
-    # 終了済みの募集は、予約の分だけを残している。取り消されたら、備蓄品に戻す
+    # 終了済みの募集は、予約の分だけを確保している。取り消されたら、その確保を解除する
     if offer.status == Offer.Status.CLOSED:
-        lot.quantity += quantity
-        lot.save(update_fields=["quantity", "updated_at"])
         offer.quantity = max(offer.quantity - quantity, 0)
         offer.save(update_fields=["quantity", "updated_at"])
 
@@ -195,13 +193,17 @@ def cancel_reservation(reservation_id, *, by_company):
 
 @transaction.atomic
 def complete_reservation(reservation_id, *, user, received_quantity):
-    """受け取りの完了を記録する。渡した分を募集から引き、受け取りが少なければ差を備蓄品に戻す"""
+    """受け取りの完了を記録する。実際に受け取った数量を、備蓄品の在庫から引く。
+    予約した数量は、募集の確保数量から外す(受け取りが少なければ、差は在庫に残る)"""
     reservation, offer, lot = _lock(reservation_id)
     if reservation.status != Reservation.Status.APPROVED:
         raise ReservationError(["承認済みの予約だけ、受け取り完了にできます。"])
     reserved = reservation.reserved_quantity
     if not 1 <= received_quantity <= reserved:
         raise ReservationError([f"受け取った数量は、1〜{reserved} の間で入力してください。"])
+
+    if lot.quantity < received_quantity:
+        raise ReservationError(["備蓄品の在庫数量が足りません。備蓄品の数量を確認してください。"])
 
     pickup_status = (
         PickupRecord.PickupStatus.COMPLETED
@@ -218,11 +220,10 @@ def complete_reservation(reservation_id, *, user, received_quantity):
     reservation.status = Reservation.Status.COMPLETED
     reservation.save(update_fields=["status", "updated_at"])
 
-    # 予約した数量は、この募集から出ていく。受け取りが少なかった差は、備蓄品に戻す
+    # ここで初めて、在庫が減る
+    lot.quantity -= received_quantity
+    lot.save(update_fields=["quantity", "updated_at"])
     offer.quantity = max(offer.quantity - reserved, 0)
-    if received_quantity < reserved:
-        lot.quantity += reserved - received_quantity
-        lot.save(update_fields=["quantity", "updated_at"])
     if offer.quantity == 0 and offer.status == Offer.Status.RECRUITING:
         offer.status = Offer.Status.CLOSED
     offer.save(update_fields=["quantity", "status", "updated_at"])

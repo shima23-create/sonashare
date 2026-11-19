@@ -39,12 +39,12 @@ def url(name, pk):
 
 
 class Base(TestCase):
-    """企業 c / 団体 g と、募集(10個。ロットは 100 → 公開済みとして 90)を用意する"""
+    """企業 c / 団体 g と、募集(10個確保。ロットの在庫は 100 のまま)を用意する"""
 
     def setUp(self):
         self.company_user, self.company = make_user("c")
         self.group_user, self.group = make_user("g", GROUP)
-        self.lot = make_lot(self.company, qty=90)
+        self.lot = make_lot(self.company, qty=100)
         self.offer = make_offer(self.company, self.lot, quantity=10)
 
     def lot_qty(self):
@@ -175,7 +175,7 @@ class CancelTests(Base):
         res.refresh_from_db()
         self.assertEqual(res.status, R.CANCELLED)
         self.assertEqual(remaining_quantity(self.offer), 10)
-        self.assertEqual(self.lot_qty(), 90)  # 募集中なら、ロットは変えない
+        self.assertEqual(self.lot_qty(), 100)  # 募集中なら、在庫は変えない
         self.assertEqual(Notification.objects.get().user, self.group_user)
         self.assertIn("却下", Notification.objects.get().title)
 
@@ -202,11 +202,11 @@ class CancelTests(Base):
         login_as(self.client, "g2")
         self.assertEqual(self.client.post(url("reservation_cancel", res.pk)).status_code, 404)
 
-    def test_cancel_on_closed_offer_returns_quantity_to_lot(self):
+    def test_cancel_on_closed_offer_releases_hold(self):
         from .offer_services import close_offer
         res = make_reservation(self.offer, self.group, 4)
-        close_offer(self.offer)  # 未予約の6個がロットに戻り、募集は4個だけ残る
-        self.assertEqual(self.lot_qty(), 96)
+        close_offer(self.offer)  # 未予約の6個の確保が外れ、募集は4個だけ残る
+        self.assertEqual(self.lot_qty(), 100)
         self.assertEqual(self.offer_state(), (4, "closed"))
         login_as(self.client, "g")
         self.client.post(url("reservation_cancel", res.pk))
@@ -224,16 +224,16 @@ class CompleteTests(Base):
         record = PickupRecord.objects.get()
         self.assertEqual((record.received_quantity, record.pickup_status, record.user), (4, "completed", self.company_user))
         self.assertEqual(self.offer_state(), (6, "recruiting"))
-        self.assertEqual(self.lot_qty(), 90)
+        self.assertEqual(self.lot_qty(), 96)  # 受け取り完了で、初めて在庫が減る
         self.assertEqual(Notification.objects.get().user, self.group_user)
 
-    def test_complete_partial_returns_difference_to_lot(self):
+    def test_complete_partial_deducts_only_received(self):
         res = make_reservation(self.offer, self.group, 4, R.APPROVED)
         login_as(self.client, "c")
         self.client.post(url("reservation_complete", res.pk), {"received_quantity": 3})
         self.assertEqual(PickupRecord.objects.get().pickup_status, "partial")
         self.assertEqual(self.offer_state(), (6, "recruiting"))
-        self.assertEqual(self.lot_qty(), 91)
+        self.assertEqual(self.lot_qty(), 97)  # 受け取った3個だけ減る
 
     def test_invalid_quantities_rejected(self):
         res = make_reservation(self.offer, self.group, 4, R.APPROVED)
@@ -290,7 +290,7 @@ class FullFlowTests(TestCase):
         })
         offer = Offer.objects.get()
         lot.refresh_from_db()
-        self.assertEqual(lot.quantity, 80)
+        self.assertEqual(lot.quantity, 100)  # 公開しても在庫は減らない
 
         login_as(self.client, "g")
         self.client.post(reverse("bichiku:offer_detail", args=[offer.pk]), reserve_data(5))
@@ -302,8 +302,27 @@ class FullFlowTests(TestCase):
 
         offer.refresh_from_db()
         lot.refresh_from_db()
-        self.assertEqual((lot.quantity, offer.quantity, offer.status), (80, 15, "recruiting"))
-        # 募集を終了すると、残りの15個がロットに戻る → 在庫は 95(渡した5個を除く)
+        self.assertEqual((lot.quantity, offer.quantity, offer.status), (95, 15, "recruiting"))
+        # 募集を終了しても、在庫は変わらない(95のまま。確保が外れるだけ)
         self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))
         lot.refresh_from_db()
         self.assertEqual(lot.quantity, 95)
+
+
+class StockOnlyDropsOnCompletionTests(Base):
+    """予約・承認・取り消しでは、在庫は減らない。企業の受け取り完了でだけ減る"""
+
+    def test_reserve_approve_cancel_keep_stock(self):
+        res = make_reservation(self.offer, self.group, 4)
+        self.assertEqual(self.lot_qty(), 100)
+        login_as(self.client, "c")
+        self.client.post(url("reservation_approve", res.pk))
+        self.assertEqual(self.lot_qty(), 100)
+        self.client.post(url("reservation_cancel", res.pk))
+        self.assertEqual(self.lot_qty(), 100)
+
+    def test_group_cannot_complete_so_stock_stays(self):
+        res = make_reservation(self.offer, self.group, 4, R.APPROVED)
+        login_as(self.client, "g")
+        self.client.post(url("reservation_complete", res.pk), {"received_quantity": 4})
+        self.assertEqual(self.lot_qty(), 100)

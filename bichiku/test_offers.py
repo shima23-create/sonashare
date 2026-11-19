@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from .offer_forms import offerable_quantity
 from .models import Offer, Organization, Profile, Reservation, StockItem, StockLot
 
 
@@ -153,7 +154,8 @@ class OfferTests(TestCase):
         self.assertEqual(Offer.objects.count(), 1)
         self.assertContains(r, "超えています")
         self.lot.refresh_from_db()
-        self.assertEqual(self.lot.quantity, 30)
+        self.assertEqual(self.lot.quantity, 100)  # 在庫は減らない
+        self.assertEqual(offerable_quantity(self.lot), 30)
 
     def test_expired_lot_cannot_publish(self):
         lot = make_lot(self.org, days=-1, name="古い")
@@ -173,7 +175,7 @@ class OfferTests(TestCase):
     def test_prefecture_is_required(self):
         r = self.client.post(self.create, offer_data(self.lot, prefecture=""))
         self.assertEqual(Offer.objects.count(), 0)
-        self.assertIn("prefecture", r.context["form"].errors)
+        self.assertIn("prefecture", r.context["form"].errors)  # 表示言語に左右されない
 
     def test_prefecture_defaults_to_organization(self):
         self.org.prefecture = "大阪府"
@@ -275,7 +277,7 @@ class OfferTests(TestCase):
 
 
 class QuantityDeductionTests(TestCase):
-    """募集を公開すると、ロットの数量から引かれる"""
+    """募集を公開しても、在庫(ロットの数量)は減らない。確保した数量だけが記録される"""
 
     def setUp(self):
         _, self.org = make_user("c")
@@ -287,21 +289,24 @@ class QuantityDeductionTests(TestCase):
         self.lot.refresh_from_db()
         return self.lot.quantity
 
+    def free(self):
+        return offerable_quantity(self.lot)
+
     def test_draft_does_not_deduct(self):
         self.client.post(self.create, offer_data(self.lot, quantity=30))
-        self.assertEqual(self.lot_qty(), 100)
+        self.assertEqual((self.lot_qty(), self.free()), (100, 100))
 
     def test_publish_directly_deducts(self):
         self.client.post(self.create, offer_data(self.lot, quantity=30, action="publish"))
-        self.assertEqual(self.lot_qty(), 70)
+        self.assertEqual((self.lot_qty(), self.free()), (100, 70))
 
     def test_publish_draft_deducts_once(self):
         self.client.post(self.create, offer_data(self.lot, quantity=30))
         offer = Offer.objects.get()
         url = reverse("bichiku:offer_publish", args=[offer.pk])
         self.client.post(url)
-        self.client.post(url)  # 2回押しても、引くのは1回だけ
-        self.assertEqual(self.lot_qty(), 70)
+        self.client.post(url)  # 2回押しても、確保するのは1回だけ
+        self.assertEqual((self.lot_qty(), self.free()), (100, 70))
 
     def test_failed_publish_does_not_deduct(self):
         self.client.post(self.create, offer_data(self.lot, quantity=30, deadline="", action="publish"))
@@ -315,20 +320,20 @@ class QuantityDeductionTests(TestCase):
         self.client.post(reverse("bichiku:offer_publish", args=[second.pk]))
         second.refresh_from_db()
         self.assertEqual(second.status, "draft")
-        self.assertEqual(self.lot_qty(), 30)
+        self.assertEqual((self.lot_qty(), self.free()), (100, 30))
 
     def test_update_recruiting_adjusts_by_difference(self):
         self.client.post(self.create, offer_data(self.lot, quantity=30, action="publish"))
         offer = Offer.objects.get()
         edit = reverse("bichiku:offer_edit", args=[offer.pk])
         self.client.post(edit, offer_data(self.lot, quantity=50, action="save"))
-        self.assertEqual(self.lot_qty(), 50)
+        self.assertEqual((self.lot_qty(), self.free()), (100, 50))
         self.client.post(edit, offer_data(self.lot, quantity=10, action="save"))
-        self.assertEqual(self.lot_qty(), 90)
-        # 残り(90) + この募集の分(10) = 100 を超える数量は、エラー
+        self.assertEqual((self.lot_qty(), self.free()), (100, 90))
+        # 在庫(100)を超える数量は、エラー
         r = self.client.post(edit, offer_data(self.lot, quantity=101, action="save"))
         self.assertContains(r, "超えています")
-        self.assertEqual(self.lot_qty(), 90)
+        self.assertEqual((self.lot_qty(), self.free()), (100, 90))
         offer.refresh_from_db()
         self.assertEqual(offer.quantity, 10)
 
@@ -350,11 +355,11 @@ class QuantityDeductionTests(TestCase):
             requested_pickup_at=timezone.now(),
         )
         self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))
-        self.assertEqual(self.lot_qty(), 85)  # 60 + 予約のない25
+        self.assertEqual((self.lot_qty(), self.free()), (100, 85))  # 予約の15だけ確保が残る
         offer.refresh_from_db()
         self.assertEqual(offer.quantity, 15)
-        self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))  # 2回目は何も戻らない
-        self.assertEqual(self.lot_qty(), 85)
+        self.client.post(reverse("bichiku:offer_close", args=[offer.pk]))  # 2回目は何も変わらない
+        self.assertEqual((self.lot_qty(), self.free()), (100, 85))
 
     def test_delete_draft_keeps_quantity(self):
         self.client.post(self.create, offer_data(self.lot, quantity=30))
@@ -364,7 +369,7 @@ class QuantityDeductionTests(TestCase):
 
     def test_sold_out_lot_not_selectable_or_suggested(self):
         self.client.post(self.create, offer_data(self.lot, quantity=100, action="publish"))
-        self.assertEqual(self.lot_qty(), 0)
+        self.assertEqual((self.lot_qty(), self.free()), (100, 0))
         r = self.client.post(self.create, offer_data(self.lot, quantity=1))
         self.assertEqual(Offer.objects.count(), 1)
         r = self.client.get(reverse("bichiku:offer_list"))
