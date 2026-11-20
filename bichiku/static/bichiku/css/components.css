@@ -68,3 +68,48 @@
 .complete-form { display: inline-flex; gap: 6px; align-items: center; }
 .complete-qty { width: 5em; padding: 6px 8px; }
 .reservation-detail-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }
+
+/* ---------- 通知(ヘッダーのベルと、通知一覧) ---------- */
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.notice-bell {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%; color: var(--text); text-decoration: none;
+}
+.notice-bell:hover { background: var(--primary-tint); }
+.notice-badge {
+  position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px; background: var(--danger-text); color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.notice-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.notice-item { background: var(--white, #fff); border: 1px solid var(--border); border-radius: 8px; }
+.notice-item.is-unread { border-color: var(--primary); background: var(--primary-tint); }
+.notice-link {
+  display: flex; gap: 12px; width: 100%; padding: 14px 16px; border: 0; background: none;
+  text-align: left; font: inherit; color: inherit; cursor: pointer;
+}
+.notice-dot { flex: none; width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: transparent; }
+.is-unread .notice-dot { background: var(--primary); }
+.notice-body { display: grid; gap: 2px; }
+.notice-title { font-weight: 700; }
+.notice-content { color: var(--text); }
+.notice-time { color: var(--muted); font-size: 13px; }
+.notice-empty { padding: 24px; text-align: center; color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- 通知のプルダウン ---------- */
+.notice-menu { position: relative; }
+.notice-panel[hidden] { display: none; }
+.notice-panel {
+  position: absolute; top: 48px; right: 0; z-index: 50;
+  width: 360px; max-width: calc(100vw - 32px); max-height: 70vh; overflow-y: auto;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+.notice-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.notice-readall { border: 0; background: none; color: var(--primary); font: inherit; font-size: 13px; cursor: pointer; }
+.notice-panel .notice-list { gap: 0; }
+.notice-panel .notice-item { border: 0; border-bottom: 1px solid var(--border); border-radius: 0; }
+.notice-panel .notice-link { padding: 12px 16px; }
+.notice-all { display: block; padding: 12px; text-align: center; color: var(--primary); text-decoration: none; font-weight: 700; }
+.notice-all:hover { background: var(--primary-tint); }

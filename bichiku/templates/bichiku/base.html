@@ -1,4 +1,5 @@
-{% load static %}<!DOCTYPE html>
+{% load static notification_tags %}
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -97,21 +98,12 @@
       <header class="topbar">
         <span class="topbar-title">{% if org and not org.is_company %}団体メニュー{% else %}企業メニュー{% endif %}</span>
         {% if request.user.is_authenticated %}
-          <details class="user-menu account-menu">
-            <summary>
-              <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
-              <span class="account-name">{{ request.user.get_username }}</span>
-              <svg class="icon"><use href="#i-chevron-down"/></svg>
-            </summary>
-            <div class="account-panel">
-              <div class="account-status">ログイン中</div>
-              <a href="{% url 'bichiku:my_page' %}#page-top">マイページ</a>
-              <form method="post" action="{% url 'accounts:logout' %}">
-                {% csrf_token %}
-                <button type="submit">ログアウト</button>
-              </form>
-            </div>
-          </details>
+          <div class="topbar-right">
+            {% notification_menu %}
+            <details class="user-menu account-menu">
+              ……(元のまま)……
+            </details>
+          </div>
         {% else %}
           <div class="user-menu">
             <a href="{% url 'accounts:login' %}">ログイン</a>

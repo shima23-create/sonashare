@@ -1,0 +1,38 @@
+{% extends "bichiku/base.html" %}
+
+{% block title %}通知 | 備蓄品マッチング{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>通知</h1>
+      <p>{% if unread_count %}未読の通知が {{ unread_count }} 件あります{% else %}未読の通知はありません{% endif %}</p>
+    </div>
+    {% if unread_count %}
+      <form method="post" action="{% url 'bichiku:notification_read_all' %}">
+        {% csrf_token %}
+        <button class="btn" type="submit">すべて既読にする</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <ul class="notice-list">
+    {% for n in notifications %}
+      <li class="notice-item{% if not n.is_read %} is-unread{% endif %}">
+        <form method="post" action="{% url 'bichiku:notification_open' n.pk %}">
+          {% csrf_token %}
+          <button class="notice-link" type="submit">
+            <span class="notice-dot" aria-hidden="true"></span>
+            <span class="notice-body">
+              <span class="notice-title">{{ n.title }}{% if not n.is_read %}<span class="sr-only">(未読)</span>{% endif %}</span>
+              <span class="notice-content">{{ n.content }}</span>
+              <span class="notice-time">{{ n.created_at|date:"n月j日 H:i" }}</span>
+            </span>
+          </button>
+        </form>
+      </li>
+    {% empty %}
+      <li class="notice-empty">通知はまだありません。</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
