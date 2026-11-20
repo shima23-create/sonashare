@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from .models import Notification
+from .models import Conversation, Notification
 
 LIST_LIMIT = 100
 
@@ -31,6 +31,12 @@ def notification_open(request, pk):
         notification.is_read = True
         notification.save(update_fields=["is_read"])
     if notification.related_reservation_id:
+        if notification.type == Notification.Type.MESSAGE:
+            conversation = Conversation.objects.filter(
+                reservation_id=notification.related_reservation_id
+            ).first()
+            if conversation:
+                return redirect("bichiku:conversation_detail", conversation_id=conversation.pk)
         return redirect("bichiku:reservation_list")
     return redirect("bichiku:notification_list")
 

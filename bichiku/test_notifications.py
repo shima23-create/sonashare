@@ -121,3 +121,38 @@ class NotificationDropdownTests(TestCase):
         self.client.logout()
         r = self.client.get(reverse("accounts:login"))
         self.assertNotContains(r, "data-notice-menu")
+
+
+class MessageNotificationTests(TestCase):
+    def setUp(self):
+        from .models import Conversation, Message
+        self.Message = Message
+        self.company_user, self.company = make_user("c")
+        self.group_user, self.group = make_user("g", GROUP)
+        self.offer = make_offer(self.company, make_lot(self.company, qty=100), quantity=10)
+        self.res = make_reservation(self.offer, self.group, 2)
+        self.conversation = Conversation.objects.get(reservation=self.res)
+
+    def test_message_notifies_only_the_other_side(self):
+        from .message_notifications import notify_new_message
+        m = self.Message.objects.create(conversation=self.conversation, sender=self.group_user, content="こんにちは")
+        self.assertEqual(notify_new_message(m), 1)
+        n = Notification.objects.get()
+        self.assertEqual((n.user, n.type, n.related_reservation), (self.company_user, "message", self.res))
+        self.assertIn("こんにちは", n.content)
+
+        m2 = self.Message.objects.create(conversation=self.conversation, sender=self.company_user, content="了解です")
+        notify_new_message(m2)
+        self.assertEqual(Notification.objects.filter(user=self.group_user, type="message").count(), 1)
+
+    def test_opening_a_message_notification_goes_to_the_conversation(self):
+        n = Notification.objects.create(
+            user=self.company_user, title="新しいメッセージ", content="x",
+            type="message", related_reservation=self.res,
+        )
+        login_as(self.client, "c")
+        r = self.client.post(reverse("bichiku:notification_open", args=[n.pk]))
+        self.assertRedirects(
+            r, reverse("bichiku:conversation_detail", args=[self.conversation.pk]),
+            fetch_redirect_response=False,
+        )

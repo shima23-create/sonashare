@@ -1,6 +1,9 @@
 from datetime import timedelta
 
 from django.contrib import messages
+from .dashboard_stats import dashboard_stats
+from .message_notifications import notify_new_message
+from .stock_services import StockDeleteError, delete_lot
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -86,6 +89,8 @@ def item_list(request):
 
     if request.method == "POST":
         form = StockLotForm(request.POST)
+        if form.is_valid() and form.cleaned_data["quantity"] < 1:
+            form.add_error("quantity", "数量は1以上にしてください。")
         if form.is_valid():
             data = form.cleaned_data
             with transaction.atomic():
@@ -208,23 +213,26 @@ def item_delete(request, lot_id):
     item = lot.stock_item
 
     try:
-        with transaction.atomic():
-            lot.delete()
-            if not item.lots.exists():
-                item.delete()
+        delete_lot(lot)
+    except StockDeleteError as error:
+        messages.error(request, error.message)
     except ProtectedError:
         messages.error(
             request,
             "提供募集や予約があるため削除できません。先に関連する募集・予約をご確認ください。",
         )
+    else:
+        messages.success(request, "備蓄品を削除しました。")
 
     return redirect("bichiku:item_list")
 
 
 def dashboard(request):
     recent_conversations = []
+    stats = None
     if request.user.is_authenticated:
         conversations, organization = _conversations_for(request.user)
+        stats = dashboard_stats(_inventory_lots_for(request.user), organization)
         for conversation in conversations[:3]:
             conversation_messages = list(conversation.messages.all())
             if conversation.reservation.organization_id == organization.pk:
@@ -243,7 +251,7 @@ def dashboard(request):
     return render(
         request,
         "bichiku/dashboard.html",
-        {"recent_conversations": recent_conversations},
+        {"recent_conversations": recent_conversations, "stats": stats},
     )
 
 
@@ -433,11 +441,12 @@ def messages_view(request, conversation_id=None):
             return redirect("bichiku:messages")
         form = MessageForm(request.POST)
         if form.is_valid():
-            Message.objects.create(
+            new_message = Message.objects.create(
                 conversation=conversation,
                 sender=request.user,
                 content=form.cleaned_data["content"],
             )
+            notify_new_message(new_message)
             conversation.save(update_fields=["updated_at"])
             return redirect(
                 "bichiku:conversation_detail", conversation_id=conversation.pk
