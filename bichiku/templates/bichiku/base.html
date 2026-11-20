@@ -101,7 +101,19 @@
           <div class="topbar-right">
             {% notification_menu %}
             <details class="user-menu account-menu">
-              ……(元のまま)……
+              <summary>
+                <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+                <span class="account-name">{{ request.user.get_username }}</span>
+                <svg class="icon"><use href="#i-chevron-down"/></svg>
+              </summary>
+              <div class="account-panel">
+                <div class="account-status">ログイン中</div>
+                <a href="{% url 'bichiku:my_page' %}#page-top">マイページ</a>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                  {% csrf_token %}
+                  <button type="submit">ログアウト</button>
+                </form>
+              </div>
             </details>
           </div>
         {% else %}
