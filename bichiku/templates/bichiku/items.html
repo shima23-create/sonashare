@@ -1,5 +1,5 @@
 {% extends "bichiku/base.html" %}
-
+{% load static %}
 {% block title %}備蓄品管理 | 備蓄品マッチング{% endblock %}
 {% block nav_items %}active{% endblock %}
 
@@ -12,6 +12,7 @@
     <a href="{% url 'bichiku:item_list' %}?register=1" class="btn btn-primary">
       <svg class="icon"><use href="#i-plus"/></svg>備蓄品を登録
     </a>
+    <a class="btn" href="{% url 'bichiku:item_list' %}?register=1&scan=1">バーコードで登録</a>
   </div>
 
   {% if messages %}
@@ -223,6 +224,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'bichiku/js/barcode.js' %}"></script>
   {{ block.super }}
   <script>
     (() => {
