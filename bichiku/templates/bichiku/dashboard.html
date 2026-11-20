@@ -14,26 +14,26 @@
     </div>
   </div>
  
-  <!-- 集計カード(数値は後でviewから渡す) -->
+  <!-- 集計カード -->
   <section class="stat-grid">
     <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-green"><svg class="icon"><use href="#i-package"/></svg></div>
-      <div class="stat-number">8</div>
+      <div class="stat-number">{{ stats.total|default:0 }}</div>
       <div class="stat-label">登録済み備蓄品</div>
     </a>
     <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-orange"><svg class="icon"><use href="#i-alert"/></svg></div>
-      <div class="stat-number">3</div>
+      <div class="stat-number">{{ stats.expiring_count|default:0 }}</div>
       <div class="stat-label">消費期限が近い備蓄品</div>
     </a>
     <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-green"><svg class="icon"><use href="#i-heart"/></svg></div>
-      <div class="stat-number">4</div>
+      <div class="stat-number">{{ stats.available_count|default:0 }}</div>
       <div class="stat-label">提供可能な備蓄品</div>
     </a>
     <a href="{% url 'bichiku:reservation_list' %}" class="card stat-card stat-card-link">
       <div class="stat-icon tone-blue"><svg class="icon"><use href="#i-calendar-clock"/></svg></div>
-      <div class="stat-number">2</div>
+      <div class="stat-number">{{ stats.reserved_count|default:0 }}</div>
       <div class="stat-label">予約中の備蓄品</div>
     </a>
   </section>
@@ -47,7 +47,21 @@
         <a href="{% url 'bichiku:item_list' %}" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
       </div>
       <ul class="list">
-        
+        {% for row in stats.expiring %}
+          <li>
+            <div>
+              <a class="list-title" href="{% url 'bichiku:item_detail' row.lot.pk %}">{{ row.lot.stock_item.name }}</a>
+              <div class="list-sub">{{ row.lot.quantity }}{{ row.lot.stock_item.unit }} ・ 期限 {{ row.lot.expiration_date|date:"Y年n月j日" }}</div>
+            </div>
+            {% if row.days_left < 0 %}
+              <span class="badge badge-danger">期限切れ</span>
+            {% else %}
+              <span class="badge badge-warn">あと{{ row.days_left }}日</span>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li><div class="list-sub">消費期限が近い備蓄品はありません。</div></li>
+        {% endfor %}
       </ul>
     </div>
  
