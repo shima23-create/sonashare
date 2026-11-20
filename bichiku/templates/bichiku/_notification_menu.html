@@ -1,0 +1,55 @@
+{% if show %}
+<div class="notice-menu" data-notice-menu>
+  <a class="notice-bell" href="{% url 'bichiku:notification_list' %}" data-notice-toggle
+     aria-haspopup="true" aria-expanded="false" aria-controls="notice-panel"
+     aria-label="通知{% if unread %}(未読 {{ unread }} 件){% endif %}" title="通知">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    {% if unread %}<span class="notice-badge">{{ unread }}</span>{% endif %}
+  </a>
+  <div class="notice-panel" id="notice-panel" hidden>
+    <div class="notice-panel-head">
+      <strong>通知</strong>
+      {% if unread %}
+        <form method="post" action="{% url 'bichiku:notification_read_all' %}">{% csrf_token %}
+          <button class="notice-readall" type="submit">すべて既読にする</button></form>
+      {% endif %}
+    </div>
+    <ul class="notice-list">
+      {% for n in notifications %}
+        <li class="notice-item{% if not n.is_read %} is-unread{% endif %}">
+          <form method="post" action="{% url 'bichiku:notification_open' n.pk %}">{% csrf_token %}
+            <button class="notice-link" type="submit">
+              <span class="notice-dot" aria-hidden="true"></span>
+              <span class="notice-body">
+                <span class="notice-title">{{ n.title }}{% if not n.is_read %}<span class="sr-only">(未読)</span>{% endif %}</span>
+                <span class="notice-content">{{ n.content }}</span>
+                <span class="notice-time">{{ n.created_at|date:"n月j日 H:i" }}</span>
+              </span>
+            </button>
+          </form>
+        </li>
+      {% empty %}
+        <li class="notice-empty">通知はまだありません。</li>
+      {% endfor %}
+    </ul>
+    <a class="notice-all" href="{% url 'bichiku:notification_list' %}">すべて見る</a>
+  </div>
+</div>
+<script>
+(function () {
+  var menu = document.querySelector('[data-notice-menu]');
+  if (!menu) return;
+  var toggle = menu.querySelector('[data-notice-toggle]');
+  var panel = menu.querySelector('.notice-panel');
+  function setOpen(open) {
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  toggle.addEventListener('click', function (e) { e.preventDefault(); setOpen(panel.hidden); });
+  document.addEventListener('click', function (e) { if (!menu.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) { setOpen(false); toggle.focus(); }
+  });
+})();
+</script>
+{% endif %}

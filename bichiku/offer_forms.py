@@ -88,6 +88,8 @@ def publish_problems(offer):
     elif offer.deadline < today:
         problems.append("募集締切日がすでに過ぎています。")
 
+    if not offer.quantity or offer.quantity < 1:
+        problems.append("提供数量は1以上にしてください。")
     remaining = offerable_quantity(lot, offer)
     if offer.quantity > remaining:
         problems.append(
@@ -167,6 +169,9 @@ class OfferForm(forms.ModelForm):
         quantity = cleaned.get("quantity")
         deadline = cleaned.get("deadline")
 
+        if quantity is not None and quantity < 1:
+            self.add_error("quantity", "提供数量は1以上にしてください。")
+            quantity = None
         if lot and quantity:
             limit = offerable_quantity(lot, self.instance)
             if quantity > limit:
