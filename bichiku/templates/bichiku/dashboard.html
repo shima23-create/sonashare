@@ -10,31 +10,31 @@
   <div class="page-head">
     <div>
       <h1>ダッシュボード</h1>
-      <p>備蓄品の管理状況を確認できます</p>
+      <p>{% if stats %}今日対応が必要なことを確認できます(登録済みの備蓄品: <a href="{% url 'bichiku:item_list' %}">{{ stats.total }}件</a>){% else %}備蓄品の管理状況を確認できます{% endif %}</p>
     </div>
   </div>
  
-  <!-- 集計カード -->
+  <!-- 集計カード(押すと、その条件で絞り込んだ画面が開きます) -->
   <section class="stat-grid">
-    <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
-      <div class="stat-icon tone-green"><svg class="icon"><use href="#i-package"/></svg></div>
-      <div class="stat-number">{{ stats.total|default:0 }}</div>
-      <div class="stat-label">登録済み備蓄品</div>
+    <a href="{% url 'bichiku:reservation_list' %}?status=reserved" class="card stat-card stat-card-link">
+      <div class="stat-icon tone-orange"><svg class="icon"><use href="#i-calendar-clock"/></svg></div>
+      <div class="stat-number">{{ stats.pending_count|default:0 }}</div>
+      <div class="stat-label">承認待ちの予約</div>
     </a>
-    <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
+    <a href="{% url 'bichiku:reservation_list' %}?status=scheduled" class="card stat-card stat-card-link">
+      <div class="stat-icon tone-blue"><svg class="icon"><use href="#i-calendar-check"/></svg></div>
+      <div class="stat-number">{{ stats.scheduled_count|default:0 }}</div>
+      <div class="stat-label">受け取り予定の予約</div>
+    </a>
+    <a href="{% url 'bichiku:item_list' %}?expiry=warning" class="card stat-card stat-card-link">
       <div class="stat-icon tone-orange"><svg class="icon"><use href="#i-alert"/></svg></div>
       <div class="stat-number">{{ stats.expiring_count|default:0 }}</div>
       <div class="stat-label">消費期限が近い備蓄品</div>
     </a>
-    <a href="{% url 'bichiku:item_list' %}" class="card stat-card stat-card-link">
+    <a href="{% url 'bichiku:offer_list' %}?status=recruiting" class="card stat-card stat-card-link">
       <div class="stat-icon tone-green"><svg class="icon"><use href="#i-heart"/></svg></div>
-      <div class="stat-number">{{ stats.available_count|default:0 }}</div>
-      <div class="stat-label">提供可能な備蓄品</div>
-    </a>
-    <a href="{% url 'bichiku:reservation_list' %}" class="card stat-card stat-card-link">
-      <div class="stat-icon tone-blue"><svg class="icon"><use href="#i-calendar-clock"/></svg></div>
-      <div class="stat-number">{{ stats.reserved_count|default:0 }}</div>
-      <div class="stat-label">予約中の備蓄品</div>
+      <div class="stat-number">{{ stats.recruiting_count|default:0 }}</div>
+      <div class="stat-label">募集中の募集</div>
     </a>
   </section>
  
@@ -44,23 +44,42 @@
     <div class="card panel">
       <div class="panel-head">
         <h2><svg class="icon warn"><use href="#i-alert"/></svg>消費期限が近い備蓄品</h2>
-        <a href="{% url 'bichiku:item_list' %}" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+        <a href="{% url 'bichiku:item_list' %}?expiry=warning" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
       </div>
       <ul class="list">
+        {% if stats.expired_count %}
+          <li>
+            <a class="badge badge-danger" href="{% url 'bichiku:item_list' %}?expiry=expired">期限切れの備蓄品が {{ stats.expired_count }} 件あります</a>
+          </li>
+        {% endif %}
         {% for row in stats.expiring %}
           <li>
             <div>
               <a class="list-title" href="{% url 'bichiku:item_detail' row.lot.pk %}">{{ row.lot.stock_item.name }}</a>
               <div class="list-sub">{{ row.lot.quantity }}{{ row.lot.stock_item.unit }} ・ 期限 {{ row.lot.expiration_date|date:"Y年n月j日" }}</div>
             </div>
-            {% if row.days_left < 0 %}
-              <span class="badge badge-danger">期限切れ</span>
-            {% else %}
-              <span class="badge badge-warn">あと{{ row.days_left }}日</span>
-            {% endif %}
+            <div class="list-actions">
+              {% if row.days_left < 0 %}
+                <span class="badge badge-danger">期限切れ</span>
+              {% else %}
+                <span class="badge badge-warn">あと{{ row.days_left }}日</span>
+              {% endif %}
+              {% if row.offer_state == "recruiting" %}
+                <a class="badge badge-ok" href="{% url 'bichiku:offer_list' %}?status=recruiting">募集中</a>
+              {% elif row.offer_state == "draft" %}
+                <a class="badge badge-info" href="{% url 'bichiku:offer_list' %}?status=draft">下書きあり</a>
+              {% elif row.can_offer %}
+                <form class="inline-form" method="post" action="{% url 'bichiku:offer_draft_from_lot' row.lot.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-small" type="submit">募集を作る</button>
+                </form>
+              {% endif %}
+            </div>
           </li>
         {% empty %}
-          <li><div class="list-sub">消費期限が近い備蓄品はありません。</div></li>
+          {% if not stats.expired_count %}
+            <li><div class="list-sub">消費期限が近い備蓄品はありません。</div></li>
+          {% endif %}
         {% endfor %}
       </ul>
     </div>

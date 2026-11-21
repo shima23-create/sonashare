@@ -128,3 +128,7 @@
 .barcode-manual { display: flex; gap: 8px; }
 .barcode-manual input { flex: 1; min-width: 0; }
 .barcode-toast { position: fixed; left: 50%; bottom: 24px; z-index: 110; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 8px; background: var(--primary); color: #fff; font-size: 14px; box-shadow: 0 6px 20px rgba(0, 0, 0, .2); }
+
+/* ---------- ダッシュボード ---------- */
+.list-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.btn-small { padding: 4px 10px; font-size: 13px; min-height: 0; }
