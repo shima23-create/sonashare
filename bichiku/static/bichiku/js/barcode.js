@@ -1,4 +1,4 @@
-/* バーコードから備蓄品登録フォームの「品名」を入力する(無料: html5-qrcode + Open Food Facts)
+/* バーコードから備蓄品登録フォームの「品名」を入力する(無料: ZXing + Open Food Facts)
  *
  * 使い方
  *   - [data-barcode-open] が付いたボタンを押すと、読み取り画面が開く
@@ -8,9 +8,9 @@
 (function () {
   "use strict";
 
-  var LIB_URL = "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js";
+  var LIB_URL = "https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js";
   var API = "https://world.openfoodfacts.org/api/v2/product/";
-  var scanner = null;
+  var session = null;   // 動いているカメラ { stream, timer }
   var overlay = null;
   var libPromise = null;
 
@@ -39,21 +39,25 @@
     head.appendChild(el("strong", {}, "バーコードを読み取る"));
     var close = el("button", { type: "button", class: "barcode-close", "aria-label": "閉じる" }, "×");
     head.appendChild(close);
-    var reader = el("div", { id: "barcode-reader", class: "barcode-reader" });
+    var readerBox = el("div", { id: "barcode-reader", class: "barcode-reader" });
+    var video = el("video", { class: "barcode-video", playsinline: "true", muted: "true", autoplay: "true" });
+    video.muted = true;
+    readerBox.appendChild(video);
+    readerBox.appendChild(el("div", { class: "barcode-guide", "aria-hidden": "true" }));
     var camera = el("select", { class: "select barcode-camera", "aria-label": "使うカメラ", hidden: "hidden" });
-    var status = el("p", { class: "barcode-status", "aria-live": "polite" }, "バーコードをカメラに映してください。");
+    var status = el("p", { class: "barcode-status", "aria-live": "polite" }, "バーコードを、枠の中に映してください。");
     var manual = el("form", { class: "barcode-manual" });
     var input = el("input", { type: "text", inputmode: "numeric", class: "field-input", placeholder: "数字を入力(例: 4901234567894)", "aria-label": "バーコードの数字", maxlength: "13" });
     var go = el("button", { type: "submit", class: "btn" }, "検索");
     manual.appendChild(input);
     manual.appendChild(go);
     panel.appendChild(head);
-    panel.appendChild(reader);
+    panel.appendChild(readerBox);
     panel.appendChild(camera);
     panel.appendChild(status);
     panel.appendChild(manual);
     box.appendChild(panel);
-    box._parts = { close: close, status: status, manual: manual, input: input, camera: camera };
+    box._parts = { close: close, status: status, manual: manual, input: input, camera: camera, video: video };
     return box;
   }
 
@@ -64,7 +68,7 @@
 
   // ---------- カメラ ----------
   function loadLib() {
-    if (window.Html5Qrcode) return Promise.resolve();
+    if (window.ZXing) return Promise.resolve();
     if (libPromise) return libPromise;
     libPromise = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
@@ -81,23 +85,26 @@
       setStatus("この接続ではカメラを使えません。下の欄に、バーコードの数字を入力してください。", true);
       return;
     }
-    loadLib().then(function () {
-      var formats = [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8];
-      scanner = new Html5Qrcode("barcode-reader", {
-        formatsToSupport: formats,
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-        verbose: false
+    var mine = {};            // この開始の目印(途中で閉じたら、止める)
+    session = mine;
+    var size = { width: { ideal: 1280 }, height: { ideal: 720 } };  // 解像度が高いほど、読み取りやすい
+    var video = cameraId
+      ? Object.assign({ deviceId: { exact: cameraId } }, size)
+      : Object.assign({ facingMode: { ideal: "environment" } }, size);
+
+    Promise.all([loadLib(), navigator.mediaDevices.getUserMedia({ video: video })]).then(function (r) {
+      var stream = r[1];
+      if (session !== mine || !overlay) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+      mine.stream = stream;
+      var v = overlay._parts.video;
+      v.srcObject = stream;
+      return v.play().then(function () {
+        setStatus("バーコードを、枠の中に映してください。", false);
+        listCameras(cameraId);
+        scanLoop(mine, v);
       });
-      return scanner.start(
-        cameraId || { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 280, height: 140 } },
-        function (text) { if (isValidJan(text)) { stopCamera().then(function () { lookup(text); }); } },
-        function () {}
-      );
-    }).then(function () {
-      setStatus("バーコードをカメラに映してください。", false);
-      listCameras(cameraId);
     }).catch(function (err) {
+      if (session !== mine) return;
       var denied = err && (err.name === "NotAllowedError" || /denied|permission/i.test(String(err)));
       setStatus(denied
         ? "カメラの使用が許可されていません。ブラウザの設定を確認するか、下の欄に数字を入力してください。"
@@ -105,30 +112,90 @@
     });
   }
 
+  // 映像を0.1秒ごとに1コマ取り出して、バーコードを探す(全体 → 中央を拡大 → …を交互に)
+  function scanLoop(mine, video) {
+    var hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    var decoder = new ZXing.MultiFormatReader();
+    decoder.setHints(hints);
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d", { willReadFrequently: true });
+    var n = 0;
+
+    function tryDecode(useGlobal) {
+      try {
+        var lum = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+        var bin = useGlobal ? new ZXing.GlobalHistogramBinarizer(lum) : new ZXing.HybridBinarizer(lum);
+        return decoder.decode(new ZXing.BinaryBitmap(bin)).getText();
+      } catch (e) { return null; }
+    }
+
+    // 試し方を順番に変える: 全体 / 中央を拡大 / 中央をさらに拡大 / 全体(別の白黒判定)
+    var steps = [
+      { crop: null, global: false },
+      { crop: [0.8, 0.4, 1.5], global: false },
+      { crop: [0.6, 0.3, 2.5], global: false },
+      { crop: [0.8, 0.4, 1.5], global: true }
+    ];
+
+    function tick() {
+      if (session !== mine || !overlay) return;
+      var w = video.videoWidth, h = video.videoHeight;
+      if (w && h) {
+        var step = steps[n++ % steps.length];
+        if (!step.crop) {
+          canvas.width = w; canvas.height = h;
+          ctx.drawImage(video, 0, 0);
+        } else {
+          var cw = Math.round(w * step.crop[0]), ch = Math.round(h * step.crop[1]);
+          canvas.width = Math.round(cw * step.crop[2]); canvas.height = Math.round(ch * step.crop[2]);
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(video, (w - cw) / 2, (h - ch) / 2, cw, ch, 0, 0, canvas.width, canvas.height);
+        }
+        var text = tryDecode(step.global);
+        if (text && isValidJan(text)) {
+          stopCamera();
+          lookup(text);
+          return;
+        }
+      }
+      mine.timer = setTimeout(tick, 80);
+    }
+    tick();
+  }
+
   // カメラが2台以上あるときだけ、選べるようにする(黒い画面のときは、別のカメラを選ぶ)
   function listCameras(current) {
     var select = overlay && overlay._parts.camera;
-    if (!select || !window.Html5Qrcode || select.options.length) return;
-    Html5Qrcode.getCameras().then(function (cams) {
-      if (!overlay || !cams || cams.length < 2) return;
+    if (!select || select.options.length) return;
+    navigator.mediaDevices.enumerateDevices().then(function (devices) {
+      var cams = devices.filter(function (d) { return d.kind === "videoinput"; });
+      if (!overlay || cams.length < 2) return;
+      var active = session && session.stream && session.stream.getVideoTracks()[0];
+      var activeId = active && active.getSettings && active.getSettings().deviceId;
       cams.forEach(function (c, i) {
-        var o = el("option", { value: c.id }, c.label || ("カメラ " + (i + 1)));
-        if (c.id === current) o.selected = true;
+        var o = el("option", { value: c.deviceId }, c.label || ("カメラ " + (i + 1)));
+        if (c.deviceId === (current || activeId)) o.selected = true;
         select.appendChild(o);
       });
       select.hidden = false;
       select.addEventListener("change", function () {
         setStatus("カメラを切り替えています…", false);
-        stopCamera().then(function () { startCamera(select.value); });
+        stopCamera();
+        startCamera(select.value);
       });
     }).catch(function () {});
   }
 
   function stopCamera() {
-    if (!scanner) return Promise.resolve();
-    var s = scanner;
-    scanner = null;
-    return s.stop().then(function () { s.clear(); }).catch(function () {});
+    var s = session;
+    session = null;
+    if (!s) return Promise.resolve();
+    if (s.timer) clearTimeout(s.timer);
+    if (s.stream) s.stream.getTracks().forEach(function (t) { t.stop(); });
+    if (overlay) overlay._parts.video.srcObject = null;
+    return Promise.resolve();
   }
 
   // ---------- 商品情報の検索と、フォームへの入力 ----------

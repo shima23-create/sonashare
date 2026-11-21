@@ -76,11 +76,12 @@ def item_list(request):
 
     today = timezone.localdate()
     if expiry == "expired":
-        inventory_lots = inventory_lots.filter(expiration_date__lt=today)
+        inventory_lots = inventory_lots.filter(expiration_date__lt=today, quantity__gt=0)
     elif expiry == "warning":
         inventory_lots = inventory_lots.filter(
             expiration_date__gte=today,
             expiration_date__lte=today + timedelta(days=EXPIRY_WARNING_DAYS),
+            quantity__gt=0,
         )
     elif expiry == "ok":
         inventory_lots = inventory_lots.filter(
