@@ -12,6 +12,7 @@ from django.db.models.functions import TruncMonth
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .stock_counts import category_counts
 
 from .access import company_required, get_organization
 from .models import EXPIRY_WARNING_DAYS, Organization, StockItem, StockLot
@@ -548,3 +549,50 @@ def my_page(request):
             "edit_mode": edit_mode,
         },
     )
+# 1人1日あたりの目安
+DAILY_TARGETS = {
+    "drink": 3,    # 水 3リットル
+    "staple": 3,   # 主食 3食
+    "toilet": 5,   # 簡易トイレ 5回分
+}
+
+@login_required
+def sufficiency_calc(request):
+    org = request.user.profile.organization
+
+    # 人数・日数（デフォルト: 3人 / 7日）
+    try:
+        people = max(1, int(request.GET.get("people", 3)))
+    except (TypeError, ValueError):
+        people = 3
+    try:
+        days = max(1, int(request.GET.get("days", 7)))
+    except (TypeError, ValueError):
+        days = 7
+
+    counts = category_counts(org)
+    results = []
+
+    for row in counts:
+        cat = row["category"]
+        daily = DAILY_TARGETS.get(cat, 0)
+        need = people * days * daily
+        stock = row["total"]
+        rate = round(stock / need * 100) if need > 0 else 0
+        shortage = max(0, need - stock)
+
+        results.append({
+            "label": row["label"],
+            "stock": stock,
+            "need": need,
+            "rate": rate,
+            "shortage": shortage,
+            "by_unit": row["by_unit"],
+            "lot_count": row["lot_count"],
+        })
+
+    return render(request, "bichiku/sufficiency_calc.html", {
+        "people": people,
+        "days": days,
+        "results": results,
+    })
