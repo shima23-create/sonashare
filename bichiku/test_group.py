@@ -141,10 +141,10 @@ class BrowseTests(TestCase):
     def test_filter_by_multiple_genres(self):
         C = StockItem.Category
         make_offer(self.company, make_lot(self.company, name="a", category=C.DRINK), title="飲料")
-        make_offer(self.company, make_lot(self.company, name="b", category=C.CANNED), title="缶詰")
+        make_offer(self.company, make_lot(self.company, name="b", category=C.OTHER), title="缶詰")
         make_offer(self.company, make_lot(self.company, name="c", category=C.STAPLE), title="主食")
         self.assertEqual(self.titles(category=["drink"]), ["飲料"])
-        self.assertEqual(sorted(self.titles(category=["drink", "canned"])), ["缶詰", "飲料"])
+        self.assertEqual(sorted(self.titles(category=["drink", "other"])), ["缶詰", "飲料"])
         self.assertEqual(len(self.titles(category=["でたらめ"])), 3)
 
     def test_filter_by_expiry_days(self):
@@ -158,7 +158,7 @@ class BrowseTests(TestCase):
     def test_filters_combine_and_count_is_shown(self):
         C = StockItem.Category
         make_offer(self.company, make_lot(self.company, name="a", category=C.DRINK), title="東京の飲料", prefecture="東京都")
-        make_offer(self.company, make_lot(self.company, name="b", category=C.CANNED), title="東京の缶詰", prefecture="東京都")
+        make_offer(self.company, make_lot(self.company, name="b", category=C.STAPLE), title="東京の缶詰", prefecture="東京都")
         make_offer(self.company, make_lot(self.company, name="c", category=C.DRINK), title="大阪の飲料", prefecture="大阪府")
         r = self.client.get(self.url, {"prefecture": "東京都", "category": ["drink"]})
         self.assertEqual([o.title for o in r.context["offers"]], ["東京の飲料"])

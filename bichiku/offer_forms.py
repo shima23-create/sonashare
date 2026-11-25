@@ -59,9 +59,12 @@ def default_offer_values(lot):
     """期限が近い備蓄品から、募集の下書きを作るときの初期値"""
     today = timezone.localdate()
     quantity = offerable_quantity(lot)
-    deadline = lot.expiration_date - timedelta(days=7)
-    if deadline < today:
-        deadline = lot.expiration_date
+    if lot.expiration_date is None:
+        deadline = today + timedelta(days=30)  # 期限なしなら、30日後を初期値にする
+    else:
+        deadline = lot.expiration_date - timedelta(days=7)
+        if deadline < today:
+            deadline = lot.expiration_date
     return {
         "title": f"{lot.stock_item.name} {quantity}{lot.stock_item.unit}",
         "quantity": quantity,
@@ -79,7 +82,7 @@ def publish_problems(offer):
 
     if lot.availability != StockLot.Availability.AVAILABLE:
         problems.append("このロットは、提供対象になっていません。備蓄品の登録内容を確認してください。")
-    if lot.expiration_date < today:
+    if lot.expiration_date is not None and lot.expiration_date < today:
         problems.append("消費期限が過ぎているため、募集できません。")
     if not offer.prefecture:
         problems.append("公開するには、受取場所の都道府県を選んでください。")
@@ -145,11 +148,12 @@ class OfferForm(forms.ModelForm):
                     availability=StockLot.Availability.AVAILABLE,
                 )
             )
-        lots = lots.select_related("stock_item").order_by("expiration_date")
+        lots = lots.select_related("stock_item").order_by(F("expiration_date").asc(nulls_last=True))
         self.fields["lot"].queryset = lots
         self.fields["lot"].empty_label = "ロットを選んでください"
         self.fields["lot"].label_from_instance = lambda lot: (
             f"{lot.stock_item.name}(期限 {lot.expiration_date:%Y年%m月%d日}"
+            if lot.expiration_date else f"{lot.stock_item.name}(期限なし"
             f"・募集に出せる残り{offerable_quantity(lot)}{lot.stock_item.unit}・{lot.storage_place})"
         )
 
@@ -185,6 +189,6 @@ class OfferForm(forms.ModelForm):
                     "quantity",
                     f"すでに {reserved}{lot.stock_item.unit} の予約が入っているため、それより少なくできません。",
                 )
-        if lot and deadline and deadline > lot.expiration_date:
+        if lot and deadline and lot.expiration_date and deadline > lot.expiration_date:
             self.add_error("deadline", "募集締切日は、消費期限以前の日付にしてください。")
         return cleaned

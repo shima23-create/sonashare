@@ -21,8 +21,9 @@ def _open_offers():
         Offer.objects.filter(
             status=Offer.Status.RECRUITING,
             deadline__gte=today,
-            lot__expiration_date__gte=today,
         )
+        # 期限内のもの(消費期限がないものも含む)
+        .filter(Q(lot__expiration_date__gte=today) | Q(lot__expiration_date__isnull=True))
         .select_related("organization", "lot__stock_item")
         .annotate(
             reserved_total=Coalesce(
@@ -46,7 +47,7 @@ SORT_CHOICES = (
 )
 SORT_ORDER = {
     "deadline": ("deadline", "pk"),
-    "expiry": ("lot__expiration_date", "pk"),
+    "expiry": (F("lot__expiration_date").asc(nulls_last=True), "pk"),
     "new": ("-created_at", "-pk"),
 }
 
@@ -58,7 +59,7 @@ def offer_browse(request):
 
     query = request.GET.get("q", "").strip()
     prefecture = request.GET.get("prefecture", "")
-    # ジャンルは、複数選べる(?category=drink&category=canned)
+    # ジャンルは、複数選べる(?category=drink&category=staple)
     selected_categories = [
         c for c in request.GET.getlist("category") if c in StockItem.Category.values
     ]

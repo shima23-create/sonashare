@@ -14,6 +14,7 @@ EXPIRY_STATUS_INFO = {
     "ok": ("正常", "badge-ok"),
     "warning": ("期限間近", "badge-warn"),
     "expired": ("期限切れ", "badge-danger"),
+    "none": ("期限なし", "badge-muted"),
 }
 
 
@@ -122,8 +123,9 @@ class StockItem(TimeStampedModel):
     class Category(models.TextChoices):
         STAPLE = "staple", "主食"
         DRINK = "drink", "飲料"
-        CANNED = "canned", "缶詰"
-        RETORT = "retort", "レトルト食品"
+        SANITARY = "sanitary", "生理用品"
+        MEDICAL = "medical", "医療品"
+        TOILET = "toilet", "簡易トイレ"
         OTHER = "other", "その他"
 
     organization = models.ForeignKey(
@@ -164,7 +166,7 @@ class StockLot(TimeStampedModel):
     )
     lot_number = models.CharField("ロット番号", max_length=50, blank=True)
     quantity = models.PositiveIntegerField("数量", default=0)
-    expiration_date = models.DateField("消費期限")
+    expiration_date = models.DateField("消費期限", null=True, blank=True)
     storage_place = models.CharField("保管場所", max_length=50)
     availability = models.CharField(
         "提供状況",
@@ -177,14 +179,16 @@ class StockLot(TimeStampedModel):
         db_table = "stock_lots"
         verbose_name = "備蓄品ロット"
         verbose_name_plural = "備蓄品ロット"
-        ordering = ["expiration_date"]
+        ordering = [models.F("expiration_date").asc(nulls_last=True)]
 
     def __str__(self):
-        return f"{self.stock_item.name}({self.expiration_date})"
+        return f"{self.stock_item.name}({self.expiration_date or '期限なし'})"
 
     # ---- 画面の「期限」バッジ用(保存せず、そのつど計算します) ----
     @property
     def expiry_status(self):
+        if self.expiration_date is None:
+            return "none"
         today = timezone.localdate()
         if self.expiration_date < today:
             return "expired"

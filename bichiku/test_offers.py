@@ -38,7 +38,7 @@ def make_lot(org, days=20, qty=100, availability=StockLot.Availability.AVAILABLE
     return StockLot.objects.create(
         stock_item=item,
         quantity=qty,
-        expiration_date=timezone.localdate() + timedelta(days=days),
+        expiration_date=None if days is None else timezone.localdate() + timedelta(days=days),
         storage_place="倉庫A",
         availability=availability,
     )

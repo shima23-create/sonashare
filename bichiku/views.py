@@ -85,8 +85,11 @@ def item_list(request):
         )
     elif expiry == "ok":
         inventory_lots = inventory_lots.filter(
-            expiration_date__gt=today + timedelta(days=EXPIRY_WARNING_DAYS)
+            Q(expiration_date__gt=today + timedelta(days=EXPIRY_WARNING_DAYS))
+            | Q(expiration_date__isnull=True)
         )
+    elif expiry == "none":
+        inventory_lots = inventory_lots.filter(expiration_date__isnull=True)
 
     if request.method == "POST":
         form = StockLotForm(request.POST)
@@ -164,13 +167,14 @@ def item_edit(request, lot_id):
         "quantity": lot.quantity,
         "unit": item.unit,
         "expiration_date": lot.expiration_date,
+        "no_expiry": lot.expiration_date is None,
         "storage_place": lot.storage_place,
         "availability": lot.availability,
         "notes": item.notes,
     }
 
     if request.method == "POST":
-        form = StockLotForm(request.POST)
+        form = StockLotForm(request.POST, allow_provided=True)
         if form.is_valid():
             with transaction.atomic():
                 item.name = form.cleaned_data["name"]

@@ -20,7 +20,7 @@
         <div class="suggest-row">
           <div>
             <div class="list-title">{{ lot.stock_item.name }}({{ lot.quantity }}{{ lot.stock_item.unit }})</div>
-            <div class="list-sub">消費期限 {{ lot.expiration_date|date:"Y年n月j日" }}</div>
+            <div class="list-sub">消費期限 {{ lot.expiration_date|date:"Y年n月j日"|default:"なし" }}</div>
           </div>
           <form class="inline-form" method="post" action="{% url 'bichiku:offer_draft_from_lot' lot.pk %}">
             {% csrf_token %}
@@ -57,7 +57,7 @@
             <td>{{ offer.quantity }}{{ offer.lot.stock_item.unit }}</td>
             <td>{{ offer.reserved_total }}{{ offer.lot.stock_item.unit }}</td>
             <td>{{ offer.deadline|date:"Y/m/d"|default:"未設定" }}</td>
-            <td>{{ offer.lot.expiration_date|date:"Y/m/d" }}</td>
+            <td>{{ offer.lot.expiration_date|date:"Y/m/d"|default:"期限なし" }}</td>
             <td>
               <div class="row-actions">
                 {% if offer.status != "closed" %}
