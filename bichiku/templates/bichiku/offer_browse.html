@@ -77,7 +77,7 @@
         <p class="offer-provider">{{ offer.organization.name }}</p>
         <dl class="offer-meta">
           <div><dt>受取場所</dt><dd>{{ offer.prefecture }} {{ offer.pickup_location }}</dd></div>
-          <div><dt>消費期限</dt><dd>{{ offer.lot.expiration_date|date:"Y年n月j日" }}</dd></div>
+          <div><dt>消費期限</dt><dd>{{ offer.lot.expiration_date|date:"Y年n月j日"|default:"期限なし" }}</dd></div>
           <div><dt>募集締切</dt><dd>{{ offer.deadline|date:"Y年n月j日" }}</dd></div>
         </dl>
       </a>

@@ -40,7 +40,7 @@ def reservation_problems(offer, quantity, requested_pickup_at):
         problems.append("この募集は、受け付けを終了しています。")
     if offer.deadline is None or offer.deadline < today:
         problems.append("この募集は、締め切られています。")
-    if lot.expiration_date < today:
+    if lot.expiration_date is not None and lot.expiration_date < today:
         problems.append("消費期限が過ぎているため、予約できません。")
 
     remaining = remaining_quantity(offer)
@@ -51,7 +51,7 @@ def reservation_problems(offer, quantity, requested_pickup_at):
 
     if requested_pickup_at < timezone.now():
         problems.append("希望受け取り日時は、現在より後にしてください。")
-    elif timezone.localtime(requested_pickup_at).date() > lot.expiration_date:
+    elif lot.expiration_date is not None and timezone.localtime(requested_pickup_at).date() > lot.expiration_date:
         problems.append("希望受け取り日は、消費期限以前にしてください。")
     return problems
 
@@ -220,9 +220,14 @@ def complete_reservation(reservation_id, *, user, received_quantity):
     reservation.status = Reservation.Status.COMPLETED
     reservation.save(update_fields=["status", "updated_at"])
 
-    # ここで初めて、在庫が減る
+    # ここで初めて、在庫が減る。全部渡し終えて0になったら「提供済み」にする
+    # (記録として残るので削除はしない。備蓄品管理の一覧には、出さなくなる)
     lot.quantity -= received_quantity
-    lot.save(update_fields=["quantity", "updated_at"])
+    update_fields = ["quantity", "updated_at"]
+    if lot.quantity == 0:
+        lot.availability = StockLot.Availability.PROVIDED
+        update_fields.append("availability")
+    lot.save(update_fields=update_fields)
     offer.quantity = max(offer.quantity - reserved, 0)
     if offer.quantity == 0 and offer.status == Offer.Status.RECRUITING:
         offer.status = Offer.Status.CLOSED

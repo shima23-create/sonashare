@@ -18,7 +18,7 @@
       <dl class="offer-meta offer-meta-wide">
         <div><dt>備蓄品</dt><dd>{{ offer.lot.stock_item.name }}({{ offer.lot.stock_item.get_category_display }})</dd></div>
         <div><dt>予約できる残り</dt><dd>{{ offer.remaining }}{{ offer.lot.stock_item.unit }}(提供 {{ offer.quantity }}{{ offer.lot.stock_item.unit }})</dd></div>
-        <div><dt>消費期限</dt><dd>{{ offer.lot.expiration_date|date:"Y年n月j日" }}</dd></div>
+        <div><dt>消費期限</dt><dd>{{ offer.lot.expiration_date|date:"Y年n月j日"|default:"期限なし" }}</dd></div>
         <div><dt>募集締切</dt><dd>{{ offer.deadline|date:"Y年n月j日" }}</dd></div>
         <div><dt>受取場所</dt><dd>{{ offer.prefecture }} {{ offer.pickup_location }}</dd></div>
         {% if offer.receiving_conditions %}<div><dt>受取条件</dt><dd>{{ offer.receiving_conditions }}</dd></div>{% endif %}

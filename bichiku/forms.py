@@ -105,9 +105,9 @@ class StockLotForm(forms.Form):
     )
     quantity = forms.IntegerField(
         label="数量",
-        min_value=0,
-        initial=0,
-        widget=forms.NumberInput(attrs={"class": "input", "min": "0"}),
+        min_value=1,
+        initial=1,
+        widget=forms.NumberInput(attrs={"class": "input", "min": "1"}),
     )
     unit = forms.ChoiceField(
         label="単位",
@@ -125,9 +125,11 @@ class StockLotForm(forms.Form):
     )
     expiration_date = forms.DateField(
         label="消費期限",
+        required=False,
         initial=timezone.localdate,
         widget=forms.DateInput(attrs={"class": "input", "type": "date"}),
     )
+    no_expiry = forms.BooleanField(required=False, label="期限なし")
     storage_place = forms.CharField(
         label="保管場所",
         max_length=50,
@@ -152,3 +154,24 @@ class StockLotForm(forms.Form):
             }
         ),
     )
+
+    def __init__(self, *args, allow_provided=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not allow_provided:
+            self.fields["availability"].choices = [
+                c
+                for c in self.fields["availability"].choices
+                if c[0] != StockLot.Availability.PROVIDED
+            ]
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("no_expiry"):
+            cleaned["expiration_date"] = None
+            self.errors.pop("expiration_date", None)
+        elif not cleaned.get("expiration_date"):
+            self.add_error(
+                "expiration_date",
+                "消費期限を入力するか、「期限なし」にチェックしてください。",
+            )
+        return cleaned

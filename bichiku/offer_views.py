@@ -239,7 +239,7 @@ def offer_draft_from_lot(request, lot_id):
     if lot.availability != StockLot.Availability.AVAILABLE:
         messages.error(request, "このロットは、提供対象になっていません。")
         return redirect("bichiku:offer_list")
-    if lot.expiration_date < timezone.localdate():
+    if lot.expiration_date is not None and lot.expiration_date < timezone.localdate():
         messages.error(request, "消費期限が過ぎているため、募集できません。")
         return redirect("bichiku:offer_list")
     if offerable_quantity(lot) <= 0:
