@@ -1,0 +1,10 @@
+[33ma0d03ec[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #21 from shima23-create/feature/barcode-scan
+[33m093668e[m[33m ([m[1;31morigin/feature/barcode-scan[m[33m)[m ダッシュボードの項目を見直し、カードから絞り込んだ画面を開けるように変更
+[33m27e02c4[m Merge pull request #20 from shima23-create/feature/barcode-scan
+[33mc480132[m バーコード読み取りをZXingに変更して精度を改善
+[33mcad9801[m バーコード読み取りで備蓄品の品名を入力する機能を追加
+[33med65786[m Merge pull request #19 from shima23-create/feature/notifications
+[33m026ade1[m[33m ([m[1;31morigin/feature/notifications[m[33m)[m ダッシュボードを実データ化し、メッセージ送信時の通知を追加
+[33m21953d1[m Merge pull request #18 from shima23-create/feature/notifications
+[33mf9869be[m ヘッダーのアカウントメニューを元に戻す
+[33m9140005[m Merge pull request #17 from shima23-create/feature/notifications

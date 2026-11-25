@@ -1,0 +1,67 @@
+{% extends "bichiku/base.html" %}
+{% load static %}
+
+{% block title %}充足率計算 | 備蓄品マッチング{% endblock %}
+{% block nav_sufficiency %}active{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h1 style="font-size: 1.5rem; font-weight: 700; color: #1e293b;">充足率計算</h1>
+  <p class="page-desc">登録済みの備蓄データから、水・主食・簡易トイレの充足率を計算します</p>
+</div>
+
+<!-- 計算条件 -->
+<div class="card">
+  <div class="card-title">計算条件</div>
+  <form method="get" class="input-row">
+    <div class="input-field">
+      <label for="people">想定人数</label>
+      <input type="number" id="people" name="people" value="{{ people }}" min="1" max="1000">
+    </div>
+    <div class="input-field">
+      <label for="days">想定日数</label>
+      <input type="number" id="days" name="days" value="{{ days }}" min="1" max="30">
+    </div>
+    <button type="submit" class="btn-calc">再計算する</button>
+  </form>
+</div>
+
+<!-- 結果 -->
+<div class="card">
+  <div class="card-title">充足率の結果</div>
+  <div class="result-grid">
+    {% for r in results %}
+    <div class="result-card">
+      <div class="label">{{ r.label }}</div>
+      <div class="detail">
+        必要 {{ r.need }} / 備蓄 {{ r.stock }}
+        {% if r.lot_count %}（{{ r.lot_count }}ロット）{% endif %}
+      </div>
+      <div class="rate {% if r.rate >= 80 %}ok{% elif r.rate >= 50 %}warn{% else %}ng{% endif %}">
+        {{ r.rate }}%
+      </div>
+      {% if r.shortage > 0 %}
+        <div class="shortage">不足 {{ r.shortage }}</div>
+      {% endif %}
+      {% if r.by_unit %}
+        <div class="units">
+          {% for u in r.by_unit %}
+            {{ u.unit }}: {{ u.quantity }}{% if not forloop.last %} / {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p>計算対象の備蓄データがありません。</p>
+    {% endfor %}
+  </div>
+
+  <p class="note">
+    ※ 水は1人1日3リットル、主食は1人1日3食、簡易トイレは1人1日5回分を目安にしています。<br>
+    ※ 消費期限切れ・数量0のロットは計算から除外しています。<br>
+    ※ 単位が異なるものは合算しています。詳細は単位ごとの内訳を参照してください。
+  </p>
+</div>
+{% endblock %}

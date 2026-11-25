@@ -53,6 +53,11 @@
           </a>
         </li>
         <li>
+  <a href="{% url 'bichiku:sufficiency_calc' %}" class="{% block nav_sufficiency %}{% endblock %}">
+    <svg class="icon"><use href="#i-eye"/></svg>充足率計算
+  </a>
+</li>
+        <li>
           <a href="{% url 'bichiku:performance_analysis' %}" class="{% block nav_performance %}{% endblock %}">
             <svg class="icon"><use href="#i-chart"/></svg>実績分析
           </a>

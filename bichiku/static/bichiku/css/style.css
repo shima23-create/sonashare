@@ -2169,3 +2169,140 @@ h1, h2, h3, p {
 .account-panel form { margin: 0; }
 .account-panel a, .account-panel button { display: flex; width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; font: inherit; color: #374151; cursor: pointer; text-align: left; }
 .account-panel a:hover, .account-panel button:hover { background: #f3f4f6; }
+
+/* 充足率計算ページ */
+.page-desc {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 18px;
+}
+
+.input-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.input-field {
+  flex: 1;
+  min-width: 140px;
+}
+
+.input-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: #f8fafc;
+}
+
+.input-field input:focus {
+  outline: none;
+  border-color: #0d5c4a;
+  background: #fff;
+}
+
+.btn-calc {
+  padding: 11px 24px;
+  background: #0d5c4a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  height: 44px;
+}
+
+.btn-calc:hover {
+  background: #0a4a3c;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.result-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.result-card .label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.result-card .detail {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.result-card .rate {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.result-card .rate.ok {
+  color: #16a34a;
+}
+
+.result-card .rate.warn {
+  color: #d97706;
+}
+
+.result-card .rate.ng {
+  color: #dc2626;
+}
+
+.result-card .shortage {
+  font-size: 0.85rem;
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.result-card .units {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.note {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 20px;
+  line-height: 1.6;
+}
