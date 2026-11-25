@@ -1,11 +1,20 @@
 from django.test import TestCase
 
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from bichiku.models import Organization
+User = get_user_model()
 
-
+SIGNUP_EXTRA = {
+    "postal_code": "123-4567",
+    "prefecture": "東京都",
+    "address": "千代田区1-1-1",
+    "phone_number": "03-1234-5678",
+    "contact_person_name": "山田太郎",
+    "contact_person_phone": "090-1234-5678",
+}
 class AccountAuthenticationTests(TestCase):
     def test_signup_creates_user_and_logs_them_in(self):
         response = self.client.post(
@@ -15,6 +24,7 @@ class AccountAuthenticationTests(TestCase):
                 "company_name": "サンプル団体",
                 "email": "signup@example.com",
                 "password": "test-password-123",
+                **SIGNUP_EXTRA,
             },
         )
 
@@ -76,6 +86,7 @@ class AccountAuthenticationTests(TestCase):
                 "company_name": "登録テスト団体",
                 "email": "signup-message@example.com",
                 "password": "test-password-123",
+                **SIGNUP_EXTRA,
             },
             follow=True,
         )
@@ -128,3 +139,34 @@ class AccountAuthenticationTests(TestCase):
         response = self.client.get(reverse("accounts:logout"))
 
         self.assertEqual(response.status_code, 405)
+
+    def test_signup_requires_organization_details(self):
+        response = self.client.post(
+            reverse("accounts:signup"),
+            {
+                "user_type": "company",
+                "company_name": "テスト企業",
+                "email": "x@example.com",
+                "password": "pass12345",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        for name in SIGNUP_EXTRA:
+            self.assertIn(name, response.context["form"].errors)
+        self.assertFalse(User.objects.filter(email="x@example.com").exists())
+
+    def test_signup_saves_organization_details(self):
+        self.client.post(
+            reverse("accounts:signup"),
+            {
+                "user_type": "company",
+                "company_name": "テスト企業",
+                "email": "y@example.com",
+                "password": "pass12345",
+                **SIGNUP_EXTRA,
+            },
+        )
+        org = Organization.objects.get(name="テスト企業")
+        self.assertEqual(org.prefecture, "東京都")
+        self.assertEqual(org.postal_code, "123-4567")
+        self.assertEqual(org.contact_person_name, "山田太郎")
