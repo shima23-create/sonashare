@@ -38,4 +38,5 @@ urlpatterns = [
     path("notifications/", notification_views.notification_list, name="notification_list"),
     path("notifications/read-all/", notification_views.notification_read_all, name="notification_read_all"),
     path("notifications/<int:pk>/open/", notification_views.notification_open, name="notification_open"),
+    path("sufficiency/", views.sufficiency_calc, name="sufficiency_calc"),
 ]
