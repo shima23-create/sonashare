@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
+import re
+
+from bichiku.models import PREFECTURES, Organization, Profile
 
 from bichiku.models import Organization, Profile
 from bichiku.access import get_organization
@@ -71,7 +74,7 @@ class SignUpForm(forms.Form):
     )
     company_name = forms.CharField(
         label="団体・企業名",
-        required=False,
+        max_length=100,
         widget=forms.TextInput(
             attrs={"class": "form-control", "placeholder": "例：さくら子ども食堂"}
         ),
@@ -89,6 +92,65 @@ class SignUpForm(forms.Form):
             attrs={"class": "form-control", "placeholder": "••••••"}
         ),
     )
+    postal_code = forms.CharField(
+        label="郵便番号",
+        max_length=8,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "123-4567"}),
+    )
+    prefecture = forms.ChoiceField(
+        label="都道府県",
+        choices=[("", "選択してください")] + list(PREFECTURES),
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+    address = forms.CharField(
+        label="所在地",
+        max_length=200,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "例：○○市△△1-2-3"}),
+    )
+    phone_number = forms.CharField(
+        label="電話番号",
+        max_length=15,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "03-1234-5678"}),
+    )
+    contact_person_name = forms.CharField(
+        label="担当者名",
+        max_length=50,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    contact_person_phone = forms.CharField(
+        label="担当者の電話番号",
+        max_length=15,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "090-1234-5678"}),
+    )
+    department_name = forms.CharField(
+        label="部署名（任意）",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    website_url = forms.URLField(
+        label="ウェブサイト（任意）",
+        required=False,
+        widget=forms.URLInput(attrs={"class": "form-control", "placeholder": "https://"}),
+    )
+
+    def clean_postal_code(self):
+        value = self.cleaned_data["postal_code"].strip()
+        if not re.fullmatch(r"\d{3}-?\d{4}", value):
+            raise forms.ValidationError("郵便番号は 123-4567 の形式で入力してください。")
+        return value
+
+    def _clean_phone(self, field):
+        value = self.cleaned_data[field].strip()
+        if not re.fullmatch(r"\d{2,4}-?\d{2,4}-?\d{3,4}", value):
+            raise forms.ValidationError("電話番号は 03-1234-5678 の形式で入力してください。")
+        return value
+
+    def clean_phone_number(self):
+        return self._clean_phone("phone_number")
+
+    def clean_contact_person_phone(self):
+        return self._clean_phone("contact_person_phone")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -103,7 +165,6 @@ class SignUpForm(forms.Form):
     def save(self):
         email = self.cleaned_data["email"]
         user_name = self.cleaned_data.get("company_name") or email.split("@", 1)[0]
-        # カスタムユーザーは email と user_name で作る(username / first_name は無い)
         user = User.objects.create_user(
             username=email,
             email=email,
@@ -118,6 +179,14 @@ class SignUpForm(forms.Form):
         organization = Organization.objects.create(
             name=user_name,
             account_type=account_type,
+            postal_code=self.cleaned_data["postal_code"],
+            prefecture=self.cleaned_data["prefecture"],
+            address=self.cleaned_data["address"],
+            phone_number=self.cleaned_data["phone_number"],
+            contact_person_name=self.cleaned_data["contact_person_name"],
+            contact_person_phone=self.cleaned_data["contact_person_phone"],
+            department_name=self.cleaned_data["department_name"],
+            website_url=self.cleaned_data["website_url"],
         )
         Profile.objects.create(user=user, organization=organization)
         return user

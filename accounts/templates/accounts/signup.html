@@ -34,6 +34,16 @@
           {% if form.company_name.errors %}<ul class="form-errors">{% for error in form.company_name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
         </div>
 
+        {% for field in form %}
+          {% if field.name in "postal_code prefecture address phone_number contact_person_name contact_person_phone department_name website_url" %}
+          <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div class="input-shell">{{ field }}</div>
+            {% if field.errors %}<ul class="form-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+        
         <div class="field">
           <label for="id_email">メールアドレス</label>
           <div class="input-shell">
