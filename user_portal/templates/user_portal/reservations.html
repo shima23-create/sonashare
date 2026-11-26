@@ -1,0 +1,51 @@
+{% extends "user_portal/base.html" %}
+{% block title %} | そなシェア{% endblock %}
+{% block nav_reservations %}active{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>予約一覧</h1>
+      <p>予約した備蓄品と企業・施設からの回答を確認できます</p>
+    </div>
+    <a href="{% url 'user_portal:item_list' %}" class="btn btn-primary">備蓄品を探す</a>
+  </div>
+  <div class="card table-card">
+    <table class="table user-reservations-table">
+      <thead>
+        <tr><th>備蓄品</th><th>提供企業・施設</th><th>受渡場所</th><th>数量</th><th>申請日</th><th>状況</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for reservation in reservations %}
+          <tr>
+            <td class="name">{{ reservation.item.title }}</td>
+            <td>{% firstof reservation.item.owner.organization_verification.business_name reservation.item.owner.user_name %}</td>
+            <td>
+              {% if reservation.item.pickup_location %}
+                <span class="pickup-text-inline">{{ reservation.item.pickup_location }}</span>
+                <a href="{% url 'user_portal:item_detail' reservation.item.pk %}" class="link-map" title="受渡場所・地図を確認">
+                  <svg class="icon icon-sm"><use href="#i-map-pin"/></svg>
+                </a>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ reservation.quantity }}{{ reservation.item.unit }}</td>
+            <td>{{ reservation.created_at|date:"Y年n月j日" }}</td>
+            <td><span class="badge {% if reservation.status == 'approved' or reservation.status == 'completed' %}badge-ok{% elif reservation.status == 'rejected' or reservation.status == 'cancelled' %}badge-danger{% else %}badge-warn{% endif %}">{{ reservation.get_status_display }}</span></td>
+            <td>
+              {% if reservation.status == 'pending' %}
+                <form method="post" class="inline-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="reservation_id" value="{{ reservation.pk }}">
+                  <button class="btn btn-small" type="submit">キャンセル</button>
+                </form>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">申請はまだありません。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

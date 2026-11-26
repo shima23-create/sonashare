@@ -1,0 +1,149 @@
+{% extends "user_portal/base.html" %}
+{% block title %}マイページ | そなシェア{% endblock %}
+{% block nav_profile %}active{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>マイページ</h1>
+      <p>利用者情報とアカウントの設定を確認できます</p>
+    </div>
+  </div>
+
+  <section class="card profile-overview">
+    <span class="profile-avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+    <div class="profile-overview-copy">
+      <span class="profile-eyebrow">利用者アカウント</span>
+      <h2>{{ request.user.user_name }} さん</h2>
+      <p>{{ request.user.email }}</p>
+    </div>
+    <span class="profile-status{% if not request.user.is_active %} is-inactive{% endif %}">
+      <span></span>{% if request.user.is_active %}アカウント有効{% else %}アカウント無効{% endif %}
+    </span>
+  </section>
+
+  <div class="profile-grid">
+    <section class="card profile-card">
+      <div class="profile-card-heading">
+        <span class="profile-section-icon tone-green"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+        <div>
+          <h2>利用者情報</h2>
+          <p>登録内容の確認</p>
+        </div>
+      </div>
+      <dl class="profile-details">
+        <div>
+          <dt>お名前・団体名</dt>
+          <dd>{{ request.user.user_name }}</dd>
+        </div>
+        <div>
+          <dt>メールアドレス</dt>
+          <dd>{{ request.user.email }}</dd>
+        </div>
+      </dl>
+      <p class="profile-note">利用者情報はこの画面から変更できません。</p>
+    </section>
+
+    <section class="card profile-card">
+      <div class="profile-card-heading">
+        <span class="profile-section-icon tone-blue"><svg class="icon"><use href="#i-calendar-clock"/></svg></span>
+        <div>
+          <h2>アカウント情報</h2>
+          <p>アカウントの登録状況</p>
+        </div>
+      </div>
+      <dl class="profile-details">
+        <div>
+          <dt>利用者ID</dt>
+          <dd>#{{ request.user.user_id }}</dd>
+        </div>
+        <div>
+          <dt>登録日</dt>
+          <dd>{{ request.user.created_at|date:"Y年n月j日" }}</dd>
+        </div>
+        <div>
+          <dt>アカウント状態</dt>
+          <dd>
+            <span class="profile-status-inline{% if not request.user.is_active %} is-inactive{% endif %}">
+              <span></span>{% if request.user.is_active %}有効{% else %}無効{% endif %}
+            </span>
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card profile-card profile-password">
+      <div class="profile-card-heading">
+        <span class="profile-section-icon tone-orange">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="11" width="16" height="10" rx="2"/>
+            <path d="M8 11V7a4 4 0 1 1 8 0v4"/>
+          </svg>
+        </span>
+        <div>
+          <h2>パスワード</h2>
+          <p>定期的な変更でアカウントを安全に保ちましょう</p>
+        </div>
+      </div>
+      <details class="profile-password-details"{% if password_form.errors %} open{% endif %}>
+        <summary class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="11" width="16" height="10" rx="2"/>
+            <path d="M8 11V7a4 4 0 1 1 8 0v4"/>
+          </svg>
+          <span>パスワードを変更する</span>
+          <span class="profile-disclosure-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="profile-password-content">
+          <p class="profile-help">本人確認のため現在のパスワードを入力してください。</p>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="password">
+            {% if password_form.non_field_errors %}
+              <div class="form-error">{{ password_form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="profile-password-fields">
+              <div class="profile-password-field is-current">
+                <label class="form-label" for="{{ password_form.old_password.id_for_label }}">
+                  {{ password_form.old_password.label }}
+                </label>
+                {{ password_form.old_password }}
+                {% for error in password_form.old_password.errors %}
+                  <small class="form-error">{{ error }}</small>
+                {% endfor %}
+              </div>
+
+              <div class="profile-password-new-fields">
+                <div class="profile-password-field">
+                  <label class="form-label" for="{{ password_form.new_password1.id_for_label }}">
+                    {{ password_form.new_password1.label }}
+                  </label>
+                  {{ password_form.new_password1 }}
+                  {% if password_form.new_password1.help_text %}
+                    <small class="form-hint">{{ password_form.new_password1.help_text }}</small>
+                  {% endif %}
+                  {% for error in password_form.new_password1.errors %}
+                    <small class="form-error">{{ error }}</small>
+                  {% endfor %}
+                </div>
+                <div class="profile-password-field">
+                  <label class="form-label" for="{{ password_form.new_password2.id_for_label }}">
+                    {{ password_form.new_password2.label }}
+                  </label>
+                  {{ password_form.new_password2 }}
+                  {% for error in password_form.new_password2.errors %}
+                    <small class="form-error">{{ error }}</small>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-password-actions">
+              <button class="btn btn-primary" type="submit">パスワードを変更</button>
+            </div>
+          </form>
+        </div>
+      </details>
+    </section>
+  </div>
+{% endblock %}

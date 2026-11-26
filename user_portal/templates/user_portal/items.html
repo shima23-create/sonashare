@@ -1,0 +1,184 @@
+{% extends "bichiku/base.html" %}
+{% load static %}
+{% block title %}備蓄品を探す | そなシェア{% endblock %}
+{% block nav_map %}active{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'user_portal/css/item-route.css' %}?v=20261125-touch-scroll">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>備蓄品を探す</h1>
+      <p>企業・施設が提供する備蓄品を確認して申請できます</p>
+    </div>
+  </div>
+
+  <section class="card route-search-card" aria-labelledby="route-search-title">
+    <div class="route-search-heading">
+      <div>
+        <h2 id="route-search-title">場所検索・ルート案内（備蓄マップ・ピン表示）</h2>
+        <p>地図上のピンを押すと、募集中の備蓄品を確認できます。住所情報からの推定位置を表示しているため、正確な受取場所は募集詳細をご確認ください。</p>
+      </div>
+    </div>
+
+    <!-- マップ絞り込みコントロール -->
+    <div class="map-filter-bar">
+      <div class="map-filter-item">
+        <label class="form-label" for="map-pref-filter">都道府県から絞り込む</label>
+        <select id="map-pref-filter" class="select" data-pref-select>
+          <option value="">全国（すべての都道府県）</option>
+          {% for value, label in prefectures %}
+            <option value="{{ value }}" {% if selected_pref == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="map-filter-item">
+        <label class="form-label" for="nearby-radius">現在地からの検索範囲</label>
+        <select id="nearby-radius" class="select" data-nearby-radius>
+          <option value="200" selected>200m以内</option>
+          <option value="500">500m以内</option>
+          <option value="1000">1km以内</option>
+          <option value="5000">5km以内</option>
+          <option value="10000">10km以内</option>
+          <option value="20000">20km以内</option>
+          <option value="50000">50km以内</option>
+          <option value="100000">100km以内</option>
+        </select>
+      </div>
+      <div class="map-filter-actions">
+        <button class="btn btn-primary" type="button" data-use-current-location>
+          <svg class="icon"><use href="#i-map-pin"/></svg>現在地を表示・絞り込む
+        </button>
+      </div>
+    </div>
+
+    <!-- 現在地ステータスバナー -->
+    <div class="current-location-badge" data-current-location-badge hidden>
+      <span class="location-pulse-dot"></span>
+      <div class="location-badge-text">
+        <strong>現在地:</strong>
+        <span data-current-location-text>現在地を取得中...</span>
+      </div>
+      <button type="button" class="btn btn-outline btn-sm location-recenter-btn" data-recenter-btn>
+        現在地に移動
+      </button>
+    </div>
+
+    <form class="route-search-form" role="search" data-place-search>
+      <div class="route-search-field">
+        <label class="form-label" for="place-keyword">施設名・住所でピン検索</label>
+        <input class="input route-search-input" type="search" id="place-keyword" name="route_query" placeholder="例：新宿区、渋谷駅、宇都宮市役所">
+      </div>
+      <button class="btn btn-outline" type="submit" data-search-button>検索</button>
+    </form>
+
+    <div class="route-search-controls" style="display:none;">
+      <div class="route-start">
+        <strong>出発地</strong>
+        <span data-start-label>現在地</span>
+      </div>
+    </div>
+
+    <a
+      class="btn btn-outline google-route-link"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-google-route-link
+      hidden
+    >
+      Google マップで経路案内を開く
+    </a>
+    <p class="route-search-status" data-route-status role="status" aria-live="polite">
+      地図上のピンを選択すると備蓄量を確認できます。
+    </p>
+    <ul class="route-search-results" data-place-results aria-label="場所の検索結果"></ul>
+    <section class="nearby-results" data-nearby-results aria-live="polite" hidden>
+      <h3>現在地周辺の提供企業</h3>
+      <p data-nearby-summary></p>
+      <ul class="route-search-results" data-nearby-list></ul>
+    </section>
+    <div
+      id="route-map"
+      class="route-map"
+      role="region"
+      aria-label="出発地と目的地のルート地図"
+      data-inventory-search-url="{% url 'user_portal:map_inventory_search' %}"
+      data-map-spots="{{ map_spots_json|escape }}"
+      data-pref-coords="{{ pref_coords_json|escape }}"
+      data-selected-pref="{{ selected_pref|escape }}"
+    ></div>
+    <p class="route-map-help">マウスホイール、または左上の「＋」「ー」ボタンで地図を拡大・縮小できます。スマートフォンでは1本指でページをスクロールし、2本指で地図を操作できます。</p>
+    <p class="route-map-attribution">地図データ © OpenStreetMap contributors</p>
+  </section>
+
+  <form class="card filter-card user-filter-card" method="get">
+    <div>
+      <label class="form-label" for="q">キーワード検索</label>
+      <div class="input-wrap">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input class="input" type="search" id="q" name="q" value="{{ query }}" placeholder="備蓄品名・企業名">
+      </div>
+    </div>
+    <div>
+      <label class="form-label" for="pref">都道府県</label>
+      <select class="select" id="pref" name="pref">
+        <option value="">全国</option>
+        {% for value, label in prefectures %}
+          <option value="{{ value }}" {% if selected_pref == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label" for="location">受け渡しエリア・場所</label>
+      <div class="input-wrap">
+        <svg class="icon"><use href="#i-map-pin"/></svg>
+        <input class="input" type="search" id="location" name="location" value="{{ location }}" placeholder="市区町村や受取場所">
+      </div>
+    </div>
+    <div>
+      <label class="form-label" for="category">カテゴリ</label>
+      <select class="select" id="category" name="category">
+        <option value="">すべて</option>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">検索</button>
+  </form>
+
+  <div class="user-item-grid">
+    {% for item in items %}
+      <article class="card user-item-card">
+        <div class="user-item-top">
+          <span class="badge badge-ok">{{ item.lot.stock_item.get_category_display }}</span>
+          <span class="user-item-quantity">残り {{ item.remaining }}{{ item.lot.stock_item.unit }}</span>
+        </div>
+        <h2>{{ item.title }}</h2>
+        <p class="user-item-organization">{{ item.organization.name }}</p>
+        {% if item.description %}<p class="user-item-description">{{ item.description|linebreaksbr }}</p>{% endif %}
+        <dl class="user-item-details">
+          {% if item.lot.expiration_date %}<div><dt>消費期限</dt><dd>{{ item.lot.expiration_date|date:"Y年n月j日" }}</dd></div>{% endif %}
+          {% if item.pickup_location %}
+            <div>
+              <dt>受渡場所</dt>
+              <dd>
+                <span class="pickup-text">{{ item.pickup_location }}</span>
+              </dd>
+            </div>
+          {% endif %}
+        </dl>
+        <a href="{% url 'user_portal:item_detail' item.pk %}" class="btn btn-primary btn-block">詳細・提供申請</a>
+      </article>
+    {% endfor %}
+  </div>
+{% endblock %}
+{% block extra_js %}
+  <script defer src="{% static 'user_portal/js/item-route.js' %}?v=20261126-precise-address-pins"></script>
+{% endblock %}

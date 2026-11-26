@@ -1,0 +1,121 @@
+{% extends "user_portal/base.html" %}
+{% block title %}ダッシュボード | そなシェア{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <div>
+      <h1>ダッシュボード</h1>
+      <p>提供可能な備蓄品と申請状況を確認できます</p>
+    </div>
+    <a href="{% url 'user_portal:item_list' %}" class="btn btn-primary"><svg class="icon"><use href="#i-search"/></svg>備蓄品を探す</a>
+  </div>
+
+  {% if notifications %}
+    <section class="card panel notification-panel">
+      <div class="panel-head">
+        <h2>
+          <svg class="icon"><use href="#i-message"/></svg>
+          新着お知らせ・通知
+          {% if unread_notifications_count > 0 %}
+            <span class="badge-count-inline">{{ unread_notifications_count }}件の未読</span>
+          {% endif %}
+        </h2>
+      </div>
+      <ul class="list notification-list">
+        {% for n in notifications %}
+          <li class="{% if not n.is_read %}notification-unread{% endif %}">
+            <a href="{% url 'user_portal:notification_redirect' n.pk %}" class="notification-link">
+              <div class="notification-main">
+                <div class="notification-title-row">
+                  {% if not n.is_read %}<span class="badge badge-warn badge-sm">NEW</span>{% endif %}
+                  <span class="list-title">{{ n.title }}</span>
+                </div>
+                <div class="list-sub">{{ n.message }}</div>
+                <div class="notification-meta">{{ n.created_at|date:"Y年n月j日 H:i" }}</div>
+              </div>
+              <svg class="icon arrow-icon"><use href="#i-arrow-right"/></svg>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  <section class="stat-grid">
+    <a href="{% url 'user_portal:item_list' %}" class="card stat-card stat-card-clickable">
+      <div class="stat-icon tone-green"><svg class="icon"><use href="#i-package"/></svg></div>
+      <div class="stat-number">{{ available_items_count }}</div>
+      <div class="stat-label">申請できる備蓄品</div>
+    </a>
+    <a href="{% url 'user_portal:reservations' %}" class="card stat-card stat-card-clickable">
+      <div class="stat-icon tone-orange"><svg class="icon"><use href="#i-calendar-clock"/></svg></div>
+      <div class="stat-number">{{ pending_count }}</div>
+      <div class="stat-label">企業確認待ち</div>
+    </a>
+    <a href="{% url 'user_portal:reservations' %}" class="card stat-card stat-card-clickable">
+      <div class="stat-icon tone-blue"><svg class="icon"><use href="#i-calendar-check"/></svg></div>
+      <div class="stat-number">{{ approved_count }}</div>
+      <div class="stat-label">承認済み</div>
+    </a>
+    <a href="{% url 'user_portal:reservations' %}" class="card stat-card stat-card-clickable">
+      <div class="stat-icon tone-green"><svg class="icon"><use href="#i-heart"/></svg></div>
+      <div class="stat-number">{{ reservation_count }}</div>
+      <div class="stat-label">これまでの申請</div>
+    </a>
+  </section>
+
+  <section class="panel-grid">
+    <div class="card panel">
+      <div class="panel-head">
+        <h2><svg class="icon"><use href="#i-package"/></svg>提供可能な備蓄品</h2>
+        <a href="{% url 'user_portal:item_list' %}" class="link-more">すべて見る<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <ul class="list">
+        {% for item in featured_items %}
+          <li class="clickable-row">
+            <a href="{% url 'user_portal:item_detail' item.pk %}" class="row-link">
+              <div>
+                <span class="list-title">{{ item.title }}</span>
+                <div class="list-sub">{% firstof item.owner.organization_verification.business_name item.owner.user_name %} ・ 残り{{ item.remaining_quantity }}{{ item.unit }}</div>
+              </div>
+              <span class="badge badge-ok">{{ item.get_category_display }}</span>
+            </a>
+          </li>
+        {% empty %}
+          <li>現在、申請できる備蓄品はありません。</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card panel">
+      <div class="panel-head">
+        <h2><svg class="icon"><use href="#i-calendar-check"/></svg>最近の予約</h2>
+        <a href="{% url 'user_portal:reservations' %}" class="link-more">予約一覧<svg class="icon"><use href="#i-arrow-right"/></svg></a>
+      </div>
+      <ul class="list">
+        {% for reservation in recent_reservations %}
+          <li class="clickable-row">
+            <a href="{% url 'user_portal:reservations' %}" class="row-link">
+              <div>
+                <span class="list-title">{{ reservation.item.title }}</span>
+                <div class="list-sub">{{ reservation.created_at|date:"Y年n月j日" }} ・ {{ reservation.quantity }}{{ reservation.item.unit }}</div>
+              </div>
+              <span class="badge {% if reservation.status == 'approved' %}badge-ok{% elif reservation.status == 'rejected' %}badge-danger{% else %}badge-warn{% endif %}">{{ reservation.get_status_display }}</span>
+            </a>
+          </li>
+        {% empty %}
+          <li>申請はまだありません。</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="card profile-shortcut">
+    <span class="stat-icon tone-blue"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+    <div class="profile-shortcut-info">
+      <h2>マイページ</h2>
+      <p>{{ request.user.user_name }} ・ {{ request.user.email }}</p>
+    </div>
+    <a href="{% url 'user_portal:profile' %}" class="btn btn-primary">利用者情報を確認・変更</a>
+  </section>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "user_portal/base.html" %}
+{% block title %}{{ item.title }} | そなシェア{% endblock %}
+{% block nav_items %}active{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+  <div class="page-head">
+    <div>
+      <a class="link-more" href="{% url 'user_portal:item_list' %}">← 備蓄品一覧へ戻る</a>
+      <h1>{{ item.title }}</h1>
+      <p>{% firstof item.owner.organization_verification.business_name item.owner.user_name %}</p>
+    </div>
+  </div>
+  <div class="user-detail-grid">
+    <section class="card panel">
+      <h2>備蓄品の情報</h2>
+      <dl class="user-item-details">
+        <div><dt>カテゴリ</dt><dd>{{ item.get_category_display }}</dd></div>
+        <div><dt>申請可能数量</dt><dd>{{ item.remaining_quantity }}{{ item.unit }}</dd></div>
+        {% if item.expiry_date %}<div><dt>消費期限</dt><dd>{{ item.expiry_date|date:"Y年n月j日" }}</dd></div>{% endif %}
+        {% if item.pickup_location %}<div><dt>受け渡し場所</dt><dd>{{ item.pickup_location }}</dd></div>{% endif %}
+        {% if item.description %}<div><dt>説明</dt><dd>{{ item.description|linebreaksbr }}</dd></div>{% endif %}
+      </dl>
+
+      {% if item.pickup_location or item.owner.organization_verification.address %}
+        <div class="access-info-box">
+          <div class="access-info-header">
+            <svg class="icon"><use href="#i-map-pin"/></svg>
+            <h3>受け渡し場所・アクセス</h3>
+          </div>
+          <div class="access-info-body">
+            {% if item.pickup_location %}
+              <p class="access-spot"><strong>受渡指定場所:</strong> {{ item.pickup_location }}</p>
+            {% endif %}
+            {% if item.owner.organization_verification.address %}
+              <p class="access-address"><strong>所在地:</strong> {{ item.owner.organization_verification.address }}</p>
+            {% endif %}
+            <div class="map-embed-wrapper" style="max-width: 420px; margin-top: 10px;">
+              <div id="detail-map" style="width: 100%; height: 260px; border-radius: 8px; border: 1px solid var(--border); z-index: 0;"></div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+    <section class="card panel">
+      <h2>提供を申請する</h2>
+      <p class="list-sub">申請後、企業・施設の確認を経て提供が決まります。</p>
+      <form method="post" class="portal-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+          <div class="form-group">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<small class="form-error">{{ error }}</small>{% endfor %}
+          </div>
+        {% endfor %}
+        <button class="btn btn-primary btn-block" type="submit">申請を送信する</button>
+      </form>
+    </section>
+  </div>
+{% endblock %}
+{% block extra_js %}
+  {% if item.pickup_location or item.owner.organization_verification.address %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (!window.L) return;
+        var mapEl = document.getElementById("detail-map");
+        if (!mapEl) return;
+        var lat = {{ item_lat|default:35.6895 }};
+        var lng = {{ item_lng|default:139.6917 }};
+        var map = window.L.map(mapEl, {
+          scrollWheelZoom: true,
+          doubleClickZoom: true,
+          touchZoom: true,
+          maxZoom: 22
+        }).setView([lat, lng], 15);
+
+        // マップ上でのホイール操作によるブラウザ全体の拡大（Ctrl+ホイール / トラックパッドピンチ）を防止し、マップのみを拡大
+        mapEl.addEventListener("wheel", function(event) {
+          if (event.ctrlKey) {
+            event.preventDefault();
+          }
+        }, { capture: true, passive: false });
+
+        ["gesturestart", "gesturechange", "gestureend"].forEach(function(evtName) {
+          mapEl.addEventListener(evtName, function(event) {
+            event.preventDefault();
+          }, { capture: true, passive: false });
+        });
+        window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxNativeZoom: 19,
+          maxZoom: 22
+        }).addTo(map);
+        window.L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup("<strong>{{ item.title|escapejs }}</strong><br>{{ item.pickup_location|default:item.owner.organization_verification.address|escapejs }}")
+          .openPopup();
+      });
+    </script>
+  {% endif %}
+{% endblock %}

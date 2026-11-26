@@ -1,0 +1,98 @@
+{% extends "user_portal/base.html" %}
+{% block title %}お問い合わせ | そなシェア{% endblock %}
+{% block nav_contact %}active{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>お問い合わせ</h1>
+    <p>サービスのご利用方法や備蓄品の受け取りに関するご質問など、お気軽にお問い合わせください。</p>
+  </div>
+</div>
+
+<div class="contact-container">
+  <div class="card contact-notice">
+    <div class="contact-notice-icon">
+      <svg class="icon"><use href="#i-message"/></svg>
+    </div>
+    <div class="contact-notice-text">
+      <strong>お問い合わせについて</strong>
+      <p>ご入力いただいた内容を確認のうえ、担当者よりメールにて折り返しご連絡いたします。土日祝日やお問い合わせ内容によっては、返信にお時間をいただく場合がございます。</p>
+    </div>
+  </div>
+
+  <form method="post" class="card contact-form" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.name.id_for_label }}">
+          {{ form.name.label }}<span class="form-required">必須</span>
+        </label>
+        {{ form.name }}
+        {% for error in form.name.errors %}<small class="form-error">{{ error }}</small>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.email.id_for_label }}">
+          {{ form.email.label }}<span class="form-required">必須</span>
+        </label>
+        {{ form.email }}
+        {% for error in form.email.errors %}<small class="form-error">{{ error }}</small>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.category.id_for_label }}">
+          {{ form.category.label }}<span class="form-required">必須</span>
+        </label>
+        {{ form.category }}
+        {% for error in form.category.errors %}<small class="form-error">{{ error }}</small>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.subject.id_for_label }}">
+          {{ form.subject.label }}<span class="form-required">必須</span>
+        </label>
+        {{ form.subject }}
+        {% for error in form.subject.errors %}<small class="form-error">{{ error }}</small>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group form-group-body">
+      <div class="body-label-row">
+        <label class="form-label" for="{{ form.body.id_for_label }}">
+          {{ form.body.label }}<span class="form-required">必須</span>
+        </label>
+        <span class="char-count" id="body-char-count">0 文字</span>
+      </div>
+      <p class="form-hint">詳しい状況やご要望など、文字数を気にせずたっぷりご記入いただけます。</p>
+      {{ form.body }}
+      {% for error in form.body.errors %}<small class="form-error">{{ error }}</small>{% endfor %}
+    </div>
+
+    <div class="form-actions contact-form-actions">
+      <button class="btn btn-primary btn-large" type="submit">
+        <svg class="icon"><use href="#i-send"/></svg>
+        お問い合わせを送信する
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function() {
+    const textarea = document.getElementById("{{ form.body.id_for_label }}");
+    const counter = document.getElementById("body-char-count");
+    if (textarea && counter) {
+      const updateCount = () => {
+        counter.textContent = textarea.value.length.toLocaleString() + " 文字";
+      };
+      textarea.addEventListener("input", updateCount);
+      updateCount();
+    }
+  })();
+</script>
+{% endblock %}

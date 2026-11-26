@@ -30,6 +30,11 @@
             <svg class="icon"><use href="#i-search"/></svg>募集を探す
           </a>
         </li>
+        <li>
+          <a href="{% url 'user_portal:item_list' %}" class="{% block nav_map %}{% endblock %}">
+            <svg class="icon"><use href="#i-search"/></svg>地図を探す
+          </a>
+        </li>
         {% else %}
         <li>
           <a href="{% url 'bichiku:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">

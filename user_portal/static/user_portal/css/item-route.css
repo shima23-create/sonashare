@@ -1,0 +1,567 @@
+.route-search-card {
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.route-search-heading {
+  margin-bottom: 18px;
+}
+
+.route-search-heading h2 {
+  font-size: 20px;
+}
+
+.route-search-heading p,
+.route-search-notice,
+.route-map-attribution {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.route-search-heading p {
+  margin-top: 4px;
+}
+
+.route-search-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.route-start {
+  display: flex;
+  flex: 1;
+  min-width: 220px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.route-start span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.route-search-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.route-search-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.route-search-field .form-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.route-search-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+}
+
+.route-search-input:focus {
+  outline: 2px solid rgba(45, 106, 79, 0.25);
+  border-color: var(--primary);
+}
+
+.route-search-notice {
+  margin-top: 12px;
+}
+
+.route-search-status {
+  margin-top: 14px;
+  font-weight: 600;
+}
+
+.google-route-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.google-route-link[hidden] {
+  display: none;
+}
+
+.route-search-results {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.route-search-results li {
+  margin: 0;
+}
+
+.nearby-results[hidden] {
+  display: none !important;
+}
+
+.nearby-results h3 {
+  margin: 12px 0 4px;
+  font-size: 16px;
+}
+
+.nearby-results [data-nearby-summary] {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.route-search-result {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.route-search-result:hover,
+.route-search-result:focus-visible {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+
+.route-search-result strong,
+.route-search-result small {
+  display: block;
+}
+
+.route-search-result small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.route-map {
+  width: 100%;
+  max-width: 620px;
+  height: clamp(300px, 48vw, 420px);
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  z-index: 0;
+  touch-action: pan-y;
+}
+
+.route-map .leaflet-control-zoom a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 22px;
+}
+
+.route-map-help {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.inventory-map-popup {
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.inventory-map-popup section + section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.inventory-map-popup ul {
+  margin: 5px 0 0;
+  padding-left: 18px;
+}
+
+.route-map-attribution {
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* =========================================
+   マップ絞り込み＆備蓄ピン・ポップアップスタイル
+   ========================================= */
+
+.map-filter-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  background: var(--primary-tint);
+  border-radius: 8px;
+  border: 1px solid #c8e3d4;
+}
+
+.map-filter-item {
+  flex: 1;
+  min-width: 220px;
+}
+
+.map-filter-item .form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.map-filter-item .select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font: inherit;
+  font-weight: 600;
+}
+
+.map-filter-actions {
+  display: flex;
+  align-items: center;
+}
+
+.map-filter-actions .btn {
+  min-height: 44px;
+  font-weight: 700;
+}
+
+/* 現在地ステータスバナー */
+.current-location-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #1e40af;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease;
+}
+
+.current-location-badge[hidden] {
+  display: none !important;
+}
+
+.location-pulse-dot {
+  width: 12px;
+  height: 12px;
+  background-color: #2563eb;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+  animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.location-badge-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.location-badge-text strong {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.location-recenter-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: #ffffff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  border-radius: 6px;
+}
+
+.location-recenter-btn:hover {
+  background: #dbeafe;
+}
+
+/* 現在地アイコン（Googleマップ風パルスドット） */
+.custom-user-dot-container {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-dot-core {
+  width: 14px;
+  height: 14px;
+  background: #1d6fd8;
+  border: 2.5px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 2;
+}
+
+.user-pulse-ring {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background: rgba(29, 111, 216, 0.3);
+  border-radius: 50%;
+  animation: pulse-ring 2s infinite ease-out;
+  z-index: 1;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* カスタムマーカーピン */
+.marker-pin-green {
+  width: 36px;
+  height: 42px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  background: #2d6a4f;
+  border: 2px solid #ffffff;
+}
+
+.marker-pin-green .marker-icon {
+  transform: rotate(45deg);
+  font-size: 16px;
+  margin-top: -4px;
+  margin-left: -4px;
+}
+
+/* ポップアップデザイン（備蓄量の強調） */
+.stock-leaflet-popup .leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+}
+
+.stock-popup-content {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.stock-popup-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.stock-popup-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.stock-popup-org {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0 0 2px;
+}
+
+.stock-popup-address {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.stock-popup-dist {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1d6fd8;
+  background: #e0efff;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.stock-popup-sectitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stock-popup-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.stock-popup-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.stock-item-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.stock-item-name {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.stock-item-qty {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.stock-item-qty strong {
+  color: var(--primary-dark);
+  font-size: 15px;
+}
+
+/* マップポップアップ内の「詳細・申請」ボタン（白文字で視認性を確保） */
+.stock-apply-btn,
+.leaflet-popup-content .stock-apply-btn,
+.leaflet-popup-content a.stock-apply-btn,
+.leaflet-container .leaflet-popup-content a.stock-apply-btn {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  border-radius: 6px;
+  text-decoration: none !important;
+  background-color: #2d6a4f !important;
+  color: #ffffff !important;
+  border: 1px solid #2d6a4f !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.stock-apply-btn:hover,
+.leaflet-popup-content .stock-apply-btn:hover,
+.leaflet-popup-content a.stock-apply-btn:hover,
+.leaflet-container .leaflet-popup-content a.stock-apply-btn:hover {
+  background-color: #1b4332 !important;
+  color: #ffffff !important;
+  border-color: #1b4332 !important;
+  text-decoration: none !important;
+}
+
+.stock-apply-btn:active,
+.leaflet-popup-content a.stock-apply-btn:active {
+  background-color: #081c15 !important;
+  color: #ffffff !important;
+}
+
+.stock-popup-extlink {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: right;
+  margin-top: 6px;
+  text-decoration: none;
+}
+
+.stock-popup-extlink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+  .route-search-card {
+    padding: 20px 16px;
+  }
+
+  .map-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-filter-actions .btn {
+    width: 100%;
+  }
+
+  .route-search-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .route-search-form .btn,
+  .route-search-controls > .btn {
+    width: 100%;
+  }
+
+  .route-map {
+    height: clamp(260px, 70vw, 340px);
+  }
+}

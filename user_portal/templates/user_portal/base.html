@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}そなシェア{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'bichiku/css/style.css' %}?v=20261125-portal-logout">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  {% include "bichiku/_icons.html" %}
+  <div class="app">
+    <aside class="sidebar">
+      <a href="{% url 'user_portal:dashboard' %}" class="sidebar-brand">
+        <span class="logo-mark"><svg class="icon"><use href="#i-package"/></svg></span>
+        そなシェア
+      </a>
+      <ul class="nav">
+        <li>
+          <a href="{% url 'user_portal:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">
+            <svg class="icon"><use href="#i-grid"/></svg>ダッシュボード
+            {% if unread_notifications_count > 0 %}<span class="badge-count">{{ unread_notifications_count }}</span>{% endif %}
+          </a>
+        </li>
+        <li><a href="{% url 'user_portal:item_list' %}" class="{% block nav_items %}{% endblock %}"><svg class="icon"><use href="#i-package"/></svg>地図を探す</a></li>
+        <li><a href="{% url 'user_portal:reservations' %}" class="{% block nav_reservations %}{% endblock %}"><svg class="icon"><use href="#i-calendar-check"/></svg>予約一覧</a></li>
+        <li><a href="{% url 'user_portal:profile' %}" class="{% block nav_profile %}{% endblock %}"><svg class="icon"><use href="#i-user-circle"/></svg>マイページ</a></li>
+        <li class="nav-divider"></li>
+        <li><a href="{% url 'user_portal:contact' %}" class="{% block nav_contact %}{% endblock %}"><svg class="icon"><use href="#i-send"/></svg>お問い合わせ</a></li>
+        <li class="nav-divider"></li>
+        <li>
+          <form method="post" action="{% url 'accounts:logout' %}" class="nav-logout-form">
+            {% csrf_token %}
+            <button type="submit" class="nav-logout-button"><svg class="icon"><use href="#i-log-out"/></svg>ログアウト</button>
+          </form>
+        </li>
+      </ul>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <span class="topbar-title">利用者メニュー</span>
+        <a class="user-menu" href="{% url 'user_portal:profile' %}" aria-label="マイページ（{{ request.user.get_username }}）">
+          <span class="avatar"><svg class="icon"><use href="#i-user-circle"/></svg></span>
+          {{ request.user.get_username }}
+          <svg class="icon"><use href="#i-chevron-down"/></svg>
+        </a>
+      </header>
+      <main class="content">
+        {% if messages %}
+          <ul class="list messages-list">
+            {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

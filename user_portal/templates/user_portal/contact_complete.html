@@ -1,0 +1,18 @@
+{% extends "user_portal/base.html" %}
+{% block title %}送信完了 | そなシェア{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 680px; margin: 40px auto; text-align: center; padding: 48px 32px;">
+  <div style="width: 64px; height: 64px; background: var(--ok-bg); color: var(--ok-text); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+    <svg class="icon" style="width: 32px; height: 32px;"><use href="#i-calendar-check"/></svg>
+  </div>
+  <h1 style="font-size: 24px; margin-bottom: 12px;">お問い合わせを受け付けました</h1>
+  <p style="color: var(--muted); line-height: 1.8; margin-bottom: 32px;">
+    お問い合わせいただきありがとうございます。<br>
+    内容を確認のうえ、担当者より折り返しご連絡いたします。
+  </p>
+  <div style="display: flex; justify-content: center; gap: 12px;">
+    <a href="{% url 'user_portal:dashboard' %}" class="btn btn-primary">ダッシュボードへ戻る</a>
+    <a href="{% url 'user_portal:contact' %}" class="btn">お問い合わせトップへ</a>
+  </div>
+</div>
+{% endblock %}

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bichiku',
     'accounts',
+    'user_portal',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +65,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'bichiku.context_processors.unread_message_count',
+                'user_portal.context_processors.notifications_context',
             ],
         },
     },
