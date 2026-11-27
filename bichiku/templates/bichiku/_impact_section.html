@@ -1,0 +1,60 @@
+{# 実績分析の中身(食品ロス削減の効果)。context に impact が必要 #}
+<section class="impact-section" aria-label="食品ロス削減の効果">
+  <div class="performance-stat-grid">
+    <article class="card performance-stat">
+      <div class="performance-stat-value">{{ impact.total_kg }}<small>kg</small></div>
+      <div class="performance-stat-label">食品ロス削減量</div>
+    </article>
+    <article class="card performance-stat">
+      <div class="performance-stat-value">{{ impact.co2_kg }}<small>kg-CO₂</small></div>
+      <div class="performance-stat-label">CO₂排出の削減量（目安）</div>
+    </article>
+    <article class="card performance-stat">
+      <div class="performance-stat-value">{{ impact.saved_yen|floatformat:"0g" }}<small>円</small></div>
+      <div class="performance-stat-label">廃棄費用の削減額（目安）</div>
+    </article>
+    <article class="card performance-stat">
+      <div class="performance-stat-value">{{ partner_organization_count }}<small>団体</small></div>
+      <div class="performance-stat-label">{% if user.profile.organization.is_company %}支援した団体{% else %}受け取り元の企業{% endif %}</div>
+    </article>
+  </div>
+
+  <section class="performance-panels">
+    <article class="card performance-panel">
+      <div class="performance-panel-heading"><div><h2>月ごとの削減量</h2><p>単位: kg</p></div></div>
+      <div class="performance-chart" role="img" aria-label="過去12か月の月別食品ロス削減量">
+        {% for row in impact.monthly %}
+          <div class="performance-chart-column">
+            <span class="performance-chart-count">{{ row.kg }}</span>
+            <div class="performance-chart-track">
+              <div class="performance-chart-bar" style="height: {% if row.bar_percent %}{{ row.bar_percent }}{% else %}2{% endif %}%"></div>
+            </div>
+            <span class="performance-chart-month">{{ row.month|date:"n月" }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card performance-panel">
+      <div class="performance-panel-heading"><div><h2>今ある食品の状況</h2><p>飲料・主食の在庫</p></div></div>
+      <ul class="performance-status-list">
+        <li>
+          <span>期限が近い（{{ impact.warning_days }}日以内）<br>今譲渡すれば、約{{ impact.at_risk_yen|floatformat:"0g" }}円の廃棄費用を避けられます</span>
+          <strong>{{ impact.at_risk_kg }}<small>kg</small></strong>
+        </li>
+        <li>
+          <span>期限切れ<br>廃棄の見込み：約{{ impact.expired_yen|floatformat:"0g" }}円</span>
+          <strong>{{ impact.expired_kg }}<small>kg</small></strong>
+        </li>
+      </ul>
+    </article>
+  </section>
+
+  <p class="performance-note">
+    ※ 標準の重さによる概算です。飲料と主食が対象で、譲渡しなければ廃棄されたものとして計算しています。
+    CO₂は {{ impact.co2_factor }}kg-CO₂/kg（環境省の公表値から割った参考値）、廃棄費用は {{ impact.disposal_yen_per_kg }}円/kg（東京23区の事業系一般廃棄物処理手数料）が目安です。
+    {% if impact.unconverted_count or impact.excluded_count %}
+      換算できなかった受け取り：{{ impact.unconverted_count|add:impact.excluded_count }}件（食品以外、または重さを決められない単位）。
+    {% endif %}
+  </p>
+</section>

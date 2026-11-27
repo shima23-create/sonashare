@@ -13,6 +13,7 @@ from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .stock_counts import category_counts
+from .impact_stats import impact_stats
 
 from .access import company_required, get_organization
 from .models import EXPIRY_WARNING_DAYS, Organization, StockItem, StockLot
@@ -395,6 +396,7 @@ def performance_analysis(request):
             ),
             "partner_organization_count": partner_organization_count,
             "reservation_status_activity": reservation_status_activity,
+            "impact": impact_stats(organization),
         },
     )
 
