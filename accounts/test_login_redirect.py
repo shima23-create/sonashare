@@ -4,11 +4,26 @@ from django.urls import reverse
 
 User = get_user_model()
 
+SIGNUP_EXTRA = {
+    "postal_code": "123-4567",
+    "prefecture": "東京都",
+    "address": "千代田区1-1-1",
+    "phone_number": "03-1234-5678",
+    "contact_person_name": "山田太郎",
+    "contact_person_phone": "090-1234-5678",
+}
+
 
 def signup(client, user_type, email):
     client.post(
         reverse("accounts:signup"),
-        {"user_type": user_type, "company_name": "テスト", "email": email, "password": "pw12345678"},
+        {
+            "user_type": user_type,
+            "company_name": "テスト",
+            "email": email,
+            "password": "pw12345678",
+            **SIGNUP_EXTRA,
+        },
     )
     client.logout()
 
@@ -46,12 +61,28 @@ class LoginRedirectTests(TestCase):
 
     def test_signup_redirects_by_type(self):
         self.client.logout()
-        r = self.client.post(reverse("accounts:signup"),
-            {"user_type": "user", "company_name": "新団体", "email": "new-g@example.com", "password": "pw12345678"})
+        r = self.client.post(
+            reverse("accounts:signup"),
+            {
+                "user_type": "user",
+                "company_name": "新団体",
+                "email": "new-g@example.com",
+                "password": "pw12345678",
+                **SIGNUP_EXTRA,
+            },
+        )
         self.assertRedirects(r, reverse("bichiku:offer_browse"), fetch_redirect_response=False)
         self.client.logout()
-        r = self.client.post(reverse("accounts:signup"),
-            {"user_type": "company", "company_name": "新企業", "email": "new-c@example.com", "password": "pw12345678"})
+        r = self.client.post(
+            reverse("accounts:signup"),
+            {
+                "user_type": "company",
+                "company_name": "新企業",
+                "email": "new-c@example.com",
+                "password": "pw12345678",
+                **SIGNUP_EXTRA,
+            },
+        )
         self.assertRedirects(r, reverse("bichiku:dashboard"), fetch_redirect_response=False)
 
     def test_already_logged_in_group_is_sent_to_browse(self):
